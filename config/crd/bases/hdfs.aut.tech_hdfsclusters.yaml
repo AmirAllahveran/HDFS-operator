@@ -1,0 +1,115 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.1
+  creationTimestamp: null
+  name: hdfsclusters.hdfs.aut.tech
+spec:
+  group: hdfs.aut.tech
+  names:
+    kind: HDFSCluster
+    listKind: HDFSClusterList
+    plural: hdfsclusters
+    singular: hdfscluster
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: HDFSCluster is the Schema for the hdfsclusters API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: HDFSClusterSpec defines the desired state of HDFSCluster
+            properties:
+              clusterConfig:
+                properties:
+                  customHadoopConfig:
+                    properties:
+                      coreSite:
+                        type: string
+                      hdfsSite:
+                        type: string
+                    type: object
+                  dfsReplication:
+                    default: 2
+                    pattern: ^[123]$
+                    type: string
+                required:
+                - dfsReplication
+                type: object
+              dataNode:
+                properties:
+                  replicas:
+                    pattern: ^[13]$
+                    type: string
+                  resources:
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                      storage:
+                        type: string
+                    required:
+                    - storage
+                    type: object
+                required:
+                - replicas
+                type: object
+              nameNode:
+                properties:
+                  replicas:
+                    pattern: ^[12]$
+                    type: string
+                  resources:
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                      storage:
+                        type: string
+                    required:
+                    - storage
+                    type: object
+                required:
+                - replicas
+                type: object
+            required:
+            - clusterConfig
+            - dataNode
+            - nameNode
+            type: object
+          status:
+            description: HDFSClusterStatus defines the observed state of HDFSCluster
+            properties:
+              creationTime:
+                type: string
+              lastUpdated:
+                type: string
+            required:
+            - creationTime
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
