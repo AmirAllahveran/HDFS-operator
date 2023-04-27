@@ -20,26 +20,76 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // HDFSClusterSpec defines the desired state of HDFSCluster
 type HDFSClusterSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	//Zookeeper   Zookeeper   `json:"zookeeper"`
+	//JournalNode JournalNode `json:"journalNode"`
+	ClusterConfig ClusterConfig `json:"clusterConfig"`
+	NameNode      NameNode      `json:"nameNode"`
+	DataNode      DataNode      `json:"dataNode"`
+}
 
-	// Foo is an example field of HDFSCluster. Edit hdfscluster_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type NameNode struct {
+	// +kubebuilder:validation:Pattern:=^[12]$
+	Replicas int `json:"replicas"`
+	// +kubebuilder:validation:Optional
+	Resources Resources `json:"resources"`
+}
+
+type DataNode struct {
+	// +kubebuilder:validation:Pattern:=^[13]$
+	Replicas int `json:"replicas"`
+	// +kubebuilder:validation:Optional
+	Resources Resources `json:"resources"`
+}
+
+type Zookeeper struct {
+	// +kubebuilder:validation:Pattern:=^[13]$
+	// +kubebuilder:default:=1
+	Replica int `json:"replica"`
+	// +kubebuilder:validation:Optional
+	Resources Resources `json:"resources"`
+}
+
+type JournalNode struct {
+	// +kubebuilder:validation:Pattern:=^[13]$
+	// +kubebuilder:default:=1
+	Replica int `json:"replica"`
+	// +kubebuilder:validation:Optional
+	Resources Resources `json:"resources"`
+}
+
+type ClusterConfig struct {
+	// +kubebuilder:validation:Pattern:=^[123]$
+	// +kubebuilder:default:=2
+	DfsReplication     int                `json:"dfsReplication"`
+	CustomHadoopConfig CustomHadoopConfig `json:"customHadoopConfig,omitempty"`
+}
+
+type CustomHadoopConfig struct {
+	CoreSite string `json:"coreSite,omitempty"`
+	HdfsSite string `json:"hdfsSite,omitempty"`
+}
+
+type Resources struct {
+	Memory  string `json:"memory,omitempty"`
+	Cpu     string `json:"cpu,omitempty"`
+	Storage string `json:"storage"`
 }
 
 // HDFSClusterStatus defines the observed state of HDFSCluster
 type HDFSClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	CreationTime string `json:"creationTime"`
+	// +kubebuilder:validation:Optional
+	LastUpdated string `json:"lastUpdated,omitempty"`
+	//Report      string `json:"report"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // HDFSCluster is the Schema for the hdfsclusters API
 type HDFSCluster struct {
