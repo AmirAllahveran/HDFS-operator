@@ -18,17 +18,7 @@ package controllers
 
 import (
 	"context"
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
-	"path/filepath"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	//"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -54,27 +44,27 @@ type HDFSClusterReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *HDFSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	//logger := log.FromContext(ctx)
 
-	var kubeConfig *string
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		kubeHome := filepath.Join(homedir.HomeDir(), ".kube", "config")
-		kubeConfig = &kubeHome
-		config, err = clientcmd.BuildConfigFromFlags("", *kubeConfig)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
-	clientSet, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		logger.Error(err, "")
-	}
+	//var kubeConfig *string
+	//config, err := rest.InClusterConfig()
+	//if err != nil {
+	//	kubeHome := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	//	kubeConfig = &kubeHome
+	//	config, err = clientcmd.BuildConfigFromFlags("", *kubeConfig)
+	//	if err != nil {
+	//		return ctrl.Result{}, err
+	//	}
+	//}
+	//
+	//clientSet, err := kubernetes.NewForConfig(config)
+	//if err != nil {
+	//	logger.Error(err, "")
+	//}
 
 	// Fetch the HDFS custom resource
 	var hdfs hdfsv1alpha1.HDFSCluster
-	err = r.Get(ctx, req.NamespacedName, &hdfs)
+	err := r.Get(ctx, req.NamespacedName, &hdfs)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Object not found, it could have been deleted
@@ -91,84 +81,105 @@ func (r *HDFSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	//}
 
 	// Check if the required components exist
-	exists, err := r.componentsExist(ctx, &hdfs)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if !exists {
-		// Create the required components
-		err = r.createComponents(ctx, clientSet, &hdfs, logger)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-	//else {
+	//exists, err := r.componentsExist(ctx, &hdfs)
+	//if err != nil {
+	//	return ctrl.Result{}, err
+	//}
+	//
+	//if !exists {
+	//	// Create the required components
+	//	err = r.createComponents(ctx, clientSet, &hdfs, logger)
+	//	if err != nil {
+	//		return ctrl.Result{}, err
+	//	}
+	//} else {
 	//	// Update the existing components if necessary
-	//	err = r.updateComponents(ctx, &hdfs, logger)
+	//	err = r.updateComponents(ctx, clientSet, &hdfs, logger)
 	//	if err != nil {
 	//		return ctrl.Result{}, err
 	//	}
 	//}
+	err = r.createOrUpdateComponents(ctx, &hdfs)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *HDFSClusterReconciler) createComponents(ctx context.Context, clientSet kubernetes.Interface, hdfs *hdfsv1alpha1.HDFSCluster, logger logr.Logger) error {
-	configMap, err := r.DesiredClusterConfigMap(hdfs)
+func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hdfs *hdfsv1alpha1.HDFSCluster) error {
+	err := r.createOrUpdateConfigmap(ctx, hdfs)
 	if err != nil {
-		logger.Error(err, "Failed to create desired ConfigMap")
-		return err
-	}
-
-	// Create the ConfigMap
-	logger.Info("Creating ConfigMap", "Namespace", configMap.Namespace, "Name", configMap.Name)
-	_, err = clientSet.CoreV1().ConfigMaps(configMap.Namespace).Create(ctx, configMap, metav1.CreateOptions{})
-	if err != nil {
-		logger.Error(err, "Failed to create ConfigMap", "Namespace", configMap.Namespace, "Name", configMap.Name)
 		return err
 	}
 
 	return nil
 }
 
-func (r *HDFSClusterReconciler) componentsExist(ctx context.Context, hdfs *hdfsv1alpha1.HDFSCluster) (bool, error) {
-	return false, nil
-	//// Check if NameNode exists
-	//nameNodeExists, err := r.nameNodeExists(ctx, hdfs)
-	//if err != nil {
-	//	return false, err
-	//}
-	//
-	//// Check if DataNodes exist
-	//dataNodesExist, err := r.dataNodesExist(ctx, hdfs)
-	//if err != nil {
-	//	return false, err
-	//}
+//func (r *HDFSClusterReconciler) updateComponents(ctx context.Context, clientSet kubernetes.Interface, hdfsCluster *hdfsv1alpha1.HDFSCluster, logger logr.Logger) error {
+//	// Get the desired ConfigMap
+//	desiredConfigMap, err := r.desiredClusterConfigMap(hdfsCluster)
+//	if err != nil {
+//		logger.Error(err, "Failed to build desired ConfigMap")
+//		return err
+//	}
+//
+//	// Get the existing ConfigMap
+//	existingConfigMap, err := clientSet.CoreV1().ConfigMaps(hdfsCluster.Namespace).Get(ctx, desiredConfigMap.Name, metav1.GetOptions{})
+//	if err != nil {
+//		logger.Error(err, "Failed to get existing ConfigMap")
+//		return err
+//	}
+//
+//	// Update the existing ConfigMap to match the desired state
+//	existingConfigMap.Data = desiredConfigMap.Data
+//	existingConfigMap.Labels = desiredConfigMap.Labels
+//	_, err = clientSet.CoreV1().ConfigMaps(hdfsCluster.Namespace).Update(ctx, existingConfigMap, metav1.UpdateOptions{})
+//	if err != nil {
+//		logger.Error(err, "Failed to update ConfigMap")
+//		return err
+//	}
+//
+//	logger.Info("Successfully updated ConfigMap")
+//	return nil
+//}
 
-	//if hdfs.Spec.NameNode.Replicas == "1" {
-	// Single NameNode mode
-	//return nameNodeExists && dataNodesExist, nil
-	//}
-	//else if hdfs.Spec.NameNode.Replicas == "2" {
-	//	// High Availability NameNode mode
-	//	// Check if JournalNodes exist
-	//	journalNodesExist, err := r.journalNodesExist(ctx, hdfs)
-	//	if err != nil {
-	//		return false, err
-	//	}
-	//
-	//	// Check if Zookeeper components exist
-	//	zookeeperExists, err := r.zookeeperExists(ctx, hdfs)
-	//	if err != nil {
-	//		return false, err
-	//	}
-	//
-	//	return nameNodeExists && dataNodesExist && journalNodesExist && zookeeperExists, nil
-	//} else {
-	//	return false, fmt.Errorf("invalid NameNode replica count: %s", hdfs.Spec.NameNode.Replicas)
-	//}
-}
+//func (r *HDFSClusterReconciler) componentsExist(ctx context.Context, hdfs *hdfsv1alpha1.HDFSCluster) (bool, error) {
+//	//return false, nil
+//	// Check if NameNode exists
+//	nameNodeExists, err := r.nameNodeExists(ctx, hdfs)
+//	if err != nil {
+//		return false, err
+//	}
+//
+//	// Check if DataNodes exist
+//	dataNodesExist, err := r.dataNodesExist(ctx, hdfs)
+//	if err != nil {
+//		return false, err
+//	}
+//
+//	if hdfs.Spec.NameNode.Replicas == "1" {
+//		//Single NameNode mode
+//		return nameNodeExists && dataNodesExist, nil
+//		//} else if hdfs.Spec.NameNode.Replicas == "2" {
+//		//	// High Availability NameNode mode
+//		//	// Check if JournalNodes exist
+//		//	journalNodesExist, err := r.journalNodesExist(ctx, hdfs)
+//		//	if err != nil {
+//		//		return false, err
+//		//	}
+//		//
+//		//	// Check if Zookeeper components exist
+//		//	zookeeperExists, err := r.zookeeperExists(ctx, hdfs)
+//		//	if err != nil {
+//		//		return false, err
+//		//	}
+//		//
+//		//	return nameNodeExists && dataNodesExist && journalNodesExist && zookeeperExists, nil
+//	} else {
+//		return false, fmt.Errorf("invalid NameNode replica count: %s", hdfs.Spec.NameNode.Replicas)
+//	}
+//}
 
 //const myHdfsFinalizer = "hdfs.finalizers.aut.com"
 //
