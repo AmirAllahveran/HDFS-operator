@@ -17,6 +17,6 @@ spec:
     resources:
       storage: 10Gi
   dataNode:
-    replicas: "2"
+    replicas: "3"
     resources:
       storage: 100Gi

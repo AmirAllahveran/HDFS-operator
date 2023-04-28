@@ -49,7 +49,7 @@ spec:
                         type: string
                     type: object
                   dfsReplication:
-                    default: 2
+                    default: "2"
                     pattern: ^[123]$
                     type: string
                 required:
