@@ -21,16 +21,23 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 			},
 		},
 		Data: map[string]string{
-			"core-site.xml": `<?xml version="1.0"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+			"core-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <!--  core-site.xml content here -->
-</configuration>
-`,
-			"hdfs-site.xml": `<?xml version="1.0"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://NAMENODE_HOST:9000</value>
+  </property>
+</configuration>`,
+			"hdfs-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <!--  hdfs-site.xml content here -->
+  <property>
+    <name>dfs.replication</name>
+    <value>` + hdfsCluster.Spec.ClusterConfig.DfsReplication + `</value>
+  </property>
+  <property>
+    <name>dfs.namenode.name.dir</name>
+    <value>file:///hdfs/namenode</value>
+  </property>
 </configuration>
 `,
 		},
