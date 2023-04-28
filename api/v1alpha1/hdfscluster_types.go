@@ -61,7 +61,7 @@ type DataNode struct {
 
 type ClusterConfig struct {
 	// +kubebuilder:validation:Pattern:=^[123]$
-	// +kubebuilder:default:=2
+	// +kubebuilder:default:="2"
 	DfsReplication     string             `json:"dfsReplication"`
 	CustomHadoopConfig CustomHadoopConfig `json:"customHadoopConfig,omitempty"`
 }
