@@ -32,6 +32,11 @@ func TestHDFSClusterReconciler_createOrUpdateComponents(t *testing.T) {
 					Storage: "10Gi",
 				},
 			},
+			NameNode: v1alpha1.NameNode{
+				Resources: v1alpha1.Resources{
+					Storage: "2Gi",
+				},
+			},
 		},
 	}
 
