@@ -26,7 +26,7 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 <configuration>
   <property>
     <name>fs.defaultFS</name>
-    <value>hdfs://namenode-hostname:9000</value>
+    <value>hdfs://` + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + `.svc.cluster.local:9000</value>
     <description>The default filesystem URI.</description>
   </property>
   <property>
