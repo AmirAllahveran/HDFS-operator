@@ -84,12 +84,12 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 				{
 					Name:       "web",
 					Port:       9870,
-					TargetPort: intstr.FromString("9870"),
+					TargetPort: intstr.FromString("web"),
 				},
 				{
 					Name:       "default",
 					Port:       9000,
-					TargetPort: intstr.FromString("9000"),
+					TargetPort: intstr.FromString("default"),
 				},
 			},
 			Selector: map[string]string{
@@ -137,9 +137,6 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 					},
 				},
 				Spec: corev1.PodSpec{
-					HostNetwork: true,
-					HostPID:     true,
-					DNSPolicy:   corev1.DNSClusterFirstWithHostNet,
 					Containers: []corev1.Container{
 						{
 							Name:  "hdfs-namenode",
