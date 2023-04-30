@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestDesiredDataNodeConfigMap(t *testing.T) {
+func TestHDFSClusterReconciler_desiredDataNodeConfigMap(t *testing.T) {
 
 	// Set up a fake client to mock API calls
 	s := runtime.NewScheme()
@@ -38,10 +38,10 @@ func TestDesiredDataNodeConfigMap(t *testing.T) {
 
 	configMap, _ := r.desiredDataNodeConfigMap(hdfsCluster)
 
-	expectedName := hdfsCluster.Name
+	expectedName := hdfsCluster.Name + "-datanode-script"
 	expectedNamespace := hdfsCluster.Namespace
 	expectedLabels := map[string]string{
-		"app": hdfsCluster.Name,
+		"app": "hdfsCluster",
 	}
 
 	if configMap.Name != expectedName {

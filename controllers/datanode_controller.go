@@ -88,6 +88,12 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 						{
 							Name:  "hdfs-datanode",
 							Image: "uhopper/hadoop-datanode:2.7.2",
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "default",
+									ContainerPort: 9864,
+								},
+							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
 									Exec: &corev1.ExecAction{
