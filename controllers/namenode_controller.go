@@ -119,6 +119,13 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 			},
 		},
 		Spec: appsv1.StatefulSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"cluster":   hdfsCluster.Name,
+					"app":       "hdfsCluster",
+					"component": "namenode",
+				},
+			},
 			ServiceName: hdfsCluster.Name + "-namenode-service",
 			Replicas:    stringToInt32(hdfsCluster.Spec.NameNode.Replicas),
 			Template: corev1.PodTemplateSpec{
