@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
@@ -60,8 +61,14 @@ func TestHDFSClusterReconciler_desiredNameNodeService(t *testing.T) {
 
 	expectedPorts := []corev1.ServicePort{
 		{
-			Name: "fs",
-			Port: 8020,
+			Name:       "web",
+			Port:       9870,
+			TargetPort: intstr.FromString("9870"),
+		},
+		{
+			Name:       "default",
+			Port:       9000,
+			TargetPort: intstr.FromString("9000"),
 		},
 	}
 	assert.Equal(t, expectedPorts, svc.Spec.Ports)

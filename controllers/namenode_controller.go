@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -81,8 +82,14 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{
-					Name: "fs",
-					Port: 8020,
+					Name:       "web",
+					Port:       9870,
+					TargetPort: intstr.FromString("9870"),
+				},
+				{
+					Name:       "default",
+					Port:       9000,
+					TargetPort: intstr.FromString("9000"),
 				},
 			},
 			Selector: map[string]string{
@@ -132,8 +139,12 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 							Image: "uhopper/hadoop-namenode:2.7.2",
 							Ports: []corev1.ContainerPort{
 								{
-									Name:          "fs",
-									ContainerPort: 8020,
+									Name:          "default",
+									ContainerPort: 9000,
+								},
+								{
+									Name:          "web",
+									ContainerPort: 9870,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
