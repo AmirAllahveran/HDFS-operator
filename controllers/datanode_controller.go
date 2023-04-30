@@ -206,6 +206,13 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 								corev1.ResourceStorage: resource.MustParse(hdfsCluster.Spec.DataNode.Resources.Storage),
 							},
 						},
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"cluster":   hdfsCluster.Name,
+								"app":       "hdfsCluster",
+								"component": "datanode",
+							},
+						},
 					},
 				},
 			},
