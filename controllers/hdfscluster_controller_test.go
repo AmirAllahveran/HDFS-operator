@@ -54,8 +54,4 @@ func TestHDFSClusterReconciler_createOrUpdateComponents(t *testing.T) {
 	cm := &corev1.ConfigMap{}
 	err = r.Get(ctx, client.ObjectKeyFromObject(desiredConfigMap), cm)
 	require.NoError(t, err)
-
-	// Continue with other assertions
-	// ...
-
 }

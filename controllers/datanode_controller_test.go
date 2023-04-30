@@ -4,6 +4,7 @@ import (
 	"context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -205,10 +206,10 @@ func TestHDFSClusterReconciler_desiredDataNodeStatefulSet(t *testing.T) {
 		t.Errorf("expected image to be 'uhopper/hadoop-datanode:2.7.2', got: %s", sts.Spec.Template.Spec.Containers[0].Image)
 	}
 
-	//// Check the volume claim templates
-	//expectedStorage := resource.MustParse(hdfs.Spec.DataNode.Resources.Storage)
-	//if sts.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests[corev1.ResourceStorage].Equal(expectedStorage) {
-	//	t.Errorf("expected storage to be '%s', got: %s", expectedStorage.String(),
-	//		sts.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests[corev1.ResourceStorage])
-	//}
+	// Check the volume claim templates
+	expectedStorage := resource.MustParse(hdfs.Spec.DataNode.Resources.Storage)
+	if sts.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests.Storage().String() != expectedStorage.String() {
+		t.Errorf("expected storage to be '%s', got: '%s'", hdfs.Spec.DataNode.Resources.Storage,
+			sts.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests.Storage().String())
+	}
 }

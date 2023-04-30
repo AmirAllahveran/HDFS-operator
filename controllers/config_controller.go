@@ -22,21 +22,41 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 		},
 		Data: map[string]string{
 			"core-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
   <property>
     <name>fs.defaultFS</name>
-    <value>hdfs://NAMENODE_HOST:9000</value>
+    <value>hdfs://namenode-hostname:9000</value>
+    <description>The default filesystem URI.</description>
+  </property>
+  <property>
+    <name>io.file.buffer.size</name>
+    <value>131072</value>
+    <description>The size of buffer for use in sequence files.</description>
   </property>
 </configuration>`,
 			"hdfs-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
+  <property>
+    <name>dfs.namenode.name.dir</name>
+    <value>/data/namenode</value>
+    <description>Path on the local filesystem where the NameNode stores the namespace and transaction logs persistently.</description>
+  </property>
+  <property>
+    <name>dfs.datanode.data.dir</name>
+    <value>/data/datanode</value>
+    <description>Comma-separated list of paths on the local filesystem of a DataNode where it stores its blocks.</description>
+  </property>
   <property>
     <name>dfs.replication</name>
     <value>` + hdfsCluster.Spec.ClusterConfig.DfsReplication + `</value>
+    <description>Default block replication. The actual number of replications can be specified when the file is created.</description>
   </property>
   <property>
-    <name>dfs.namenode.name.dir</name>
-    <value>file:///hdfs/namenode</value>
+    <name>dfs.permissions.enabled</name>
+    <value>true</value>
+    <description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
   </property>
 </configuration>
 `,
