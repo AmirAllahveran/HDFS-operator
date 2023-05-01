@@ -126,9 +126,9 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: func() *bool { b := true; return &b }(),
 							},
-							Command: []string{
-								"chmod", "+x", "/scripts/check-status.sh",
-							},
+							//Command: []string{
+							//	"chmod", "+x", "/scripts/check-status.sh",
+							//},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "hdfs-site",
