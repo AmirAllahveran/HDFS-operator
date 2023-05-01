@@ -12,7 +12,7 @@ import (
 )
 
 // +kubebuilder:webhook:path=/validate-hdfs,mutating=false,failurePolicy=fail,groups=hdfs.aut.tech,resources=hdfsclusters,verbs=create;update,versions=v1alpha1,name=vhdfsclusters.kb.io,sideEffects=None,admissionReviewVersions=v1alpha1
-// +kubebuilder:object:generate=true
+// +kubebuilder:object:generate=false
 
 type HDFSValidator struct {
 	Scheme  *runtime.Scheme

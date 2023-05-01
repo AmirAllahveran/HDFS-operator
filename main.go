@@ -97,9 +97,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	(&hdfsv1alpha1.HDFSValidator{
-		Scheme: mgr.GetScheme(),
-	}).SetupWebhookWithManager(mgr)
+	//(&hdfsv1alpha1.HDFSValidator{
+	//	Scheme: mgr.GetScheme(),
+	//}).SetupWebhookWithManager(mgr)
 
 	//+kubebuilder:scaffold:builder
 
