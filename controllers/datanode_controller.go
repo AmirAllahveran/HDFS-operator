@@ -141,7 +141,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 								},
 								{
 									Name:      hdfsCluster.Name + "-datanode",
-									MountPath: "/data/hadoop",
+									MountPath: "/data/hadoop/datanode",
 								},
 							},
 						},

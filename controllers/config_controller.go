@@ -40,12 +40,12 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 <configuration>
   <property>
     <name>dfs.namenode.name.dir</name>
-    <value>/data/namenode</value>
+    <value>/data/hadoop/namenode</value>
     <description>Path on the local filesystem where the NameNode stores the namespace and transaction logs persistently.</description>
   </property>
   <property>
     <name>dfs.datanode.data.dir</name>
-    <value>/data/datanode</value>
+    <value>/data/hadoop/datanode</value>
     <description>Comma-separated list of paths on the local filesystem of a DataNode where it stores its blocks.</description>
   </property>
   <property>
