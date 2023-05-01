@@ -195,11 +195,6 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 									SubPath:   "core-site.xml",
 								},
 								{
-									Name:      "datanode-script",
-									MountPath: "/scripts/check-status.sh",
-									SubPath:   "check-status.sh",
-								},
-								{
 									Name:      hdfsCluster.Name + "-namenode",
 									MountPath: "/data/hadoop/namenode",
 								},
@@ -213,7 +208,7 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: hdfsCluster.Name + "-config",
+										Name: hdfsCluster.Name + "-cluster-config",
 									},
 									Items: []corev1.KeyToPath{
 										{
@@ -229,7 +224,7 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: hdfsCluster.Name + "-config",
+										Name: hdfsCluster.Name + "-cluster-config",
 									},
 									Items: []corev1.KeyToPath{
 										{

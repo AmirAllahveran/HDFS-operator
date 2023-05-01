@@ -153,7 +153,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: hdfsCluster.Name + "-config",
+										Name: hdfsCluster.Name + "-cluster-config",
 									},
 									Items: []corev1.KeyToPath{
 										{
@@ -169,7 +169,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: hdfsCluster.Name + "-config",
+										Name: hdfsCluster.Name + "-cluster-config",
 									},
 									Items: []corev1.KeyToPath{
 										{
