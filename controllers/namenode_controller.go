@@ -140,7 +140,7 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 					Containers: []corev1.Container{
 						{
 							Name:  "hdfs-namenode",
-							Image: "uhopper/hadoop-namenode:2.7.2",
+							Image: "amiralh4/datanode:3.3.1",
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "default",
@@ -168,7 +168,7 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 									SubPath:   "check-status.sh",
 								},
 								{
-									Name:      hdfsCluster.Name,
+									Name:      hdfsCluster.Name + "-namenode",
 									MountPath: "/data/hadoop/namenode",
 								},
 							},
@@ -214,7 +214,7 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: hdfsCluster.Name + "namenode",
+						Name: hdfsCluster.Name + "-namenode",
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
 						AccessModes: []corev1.PersistentVolumeAccessMode{

@@ -43,7 +43,7 @@ set -o errtrace
 set -o nounset
 set -o pipefail
 set -o xtrace
-_PORTS="50075 1006"
+_PORTS="9866 9864"
 _URL_PATH="jmx?qry=Hadoop:service=DataNode,name=DataNodeInfo"
 _CLUSTER_ID=""
 for _PORT in $_PORTS; do
@@ -94,7 +94,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 					Containers: []corev1.Container{
 						{
 							Name:  "hdfs-datanode",
-							Image: "uhopper/hadoop-datanode:2.7.2",
+							Image: "amiralh4/datanode:3.3.1",
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "default",
@@ -140,7 +140,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 									SubPath:   "check-status.sh",
 								},
 								{
-									Name:      hdfsCluster.Name,
+									Name:      hdfsCluster.Name + "-datanode",
 									MountPath: "/data/hadoop",
 								},
 							},
@@ -202,7 +202,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: hdfsCluster.Name + "datanode",
+						Name: hdfsCluster.Name + "-datanode",
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
 						AccessModes: []corev1.PersistentVolumeAccessMode{
