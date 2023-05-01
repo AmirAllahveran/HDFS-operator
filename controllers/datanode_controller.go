@@ -10,8 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"time"
 )
 
 // DesiredDataNodeConfigMap
@@ -215,13 +213,13 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 								corev1.ResourceStorage: resource.MustParse(hdfsCluster.Spec.DataNode.Resources.Storage),
 							},
 						},
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"cluster":   hdfsCluster.Name,
-								"app":       "hdfsCluster",
-								"component": "datanode",
-							},
-						},
+						//Selector: &metav1.LabelSelector{
+						//	MatchLabels: map[string]string{
+						//		"cluster":   hdfsCluster.Name,
+						//		"app":       "hdfsCluster",
+						//		"component": "datanode",
+						//	},
+						//},
 					},
 				},
 			},
@@ -307,34 +305,34 @@ func (r *HDFSClusterReconciler) createOrUpdateDataNode(ctx context.Context, hdfs
 		if err := r.Create(ctx, desiredDataNodeStatefulSet); err != nil {
 			return err
 		}
-		replica, _ := strconv.Atoi(hdfs.Spec.DataNode.Replicas)
-		for i := 0; i < replica; i++ {
-			pvc := &corev1.PersistentVolumeClaim{}
-			retry := 0
-			for {
-				if err := r.Get(ctx, client.ObjectKey{
-					Namespace: hdfs.Namespace,
-					Name:      hdfs.Name + "-datanode-" + hdfs.Name + "-datanode-" + strconv.Itoa(i),
-				}, pvc); err != nil {
-					time.Sleep(time.Second * 1)
-					retry++
-					//continue
-				} else {
-					break
-				}
-				if retry > 10 {
-					return err
-				}
-			}
-
-			if err := ctrl.SetControllerReference(hdfs, pvc, r.Scheme); err != nil {
-				return err
-			}
-
-			if err := r.Update(ctx, pvc); err != nil {
-				return err
-			}
-		}
+		//replica, _ := strconv.Atoi(hdfs.Spec.DataNode.Replicas)
+		//for i := 0; i < replica; i++ {
+		//	pvc := &corev1.PersistentVolumeClaim{}
+		//	retry := 0
+		//	for {
+		//		if err := r.Get(ctx, client.ObjectKey{
+		//			Namespace: hdfs.Namespace,
+		//			Name:      hdfs.Name + "-datanode-" + hdfs.Name + "-datanode-" + strconv.Itoa(i),
+		//		}, pvc); err != nil {
+		//			time.Sleep(time.Second * 1)
+		//			retry++
+		//			//continue
+		//		} else {
+		//			break
+		//		}
+		//		if retry > 10 {
+		//			return err
+		//		}
+		//	}
+		//
+		//	if err := ctrl.SetControllerReference(hdfs, pvc, r.Scheme); err != nil {
+		//		return err
+		//	}
+		//
+		//	if err := r.Update(ctx, pvc); err != nil {
+		//		return err
+		//	}
+		//}
 	} else {
 		existingStatefulSet.Spec = desiredDataNodeStatefulSet.Spec
 		if err := r.Update(ctx, existingStatefulSet); err != nil {
