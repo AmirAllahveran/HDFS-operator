@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster) error {
@@ -31,11 +32,11 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		if err := r.Create(ctx, desiredService); err != nil {
 			return err
 		}
-	} else {
-		existingService.Spec = desiredService.Spec
-		if err := r.Update(ctx, existingService); err != nil {
-			return err
-		}
+		//} else {
+		//	existingService.Spec = desiredService.Spec
+		//	if err := r.Update(ctx, existingService); err != nil {
+		//		return err
+		//	}
 	}
 
 	// Check if the StatefulSet already exists
@@ -49,6 +50,26 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 	if errors.IsNotFound(err) {
 		if err := r.Create(ctx, desiredStatefulSet); err != nil {
 			return err
+		}
+
+		replica, _ := strconv.Atoi(hdfsCluster.Spec.NameNode.Replicas)
+
+		for i := 0; i < replica; i++ {
+			pvc := &corev1.PersistentVolumeClaim{}
+			if err := r.Get(ctx, client.ObjectKey{
+				Namespace: hdfsCluster.Namespace,
+				Name:      hdfsCluster.Name + "-namenode-" + hdfsCluster.Name + "-namenode-" + strconv.Itoa(i),
+			}, pvc); err != nil {
+				return err
+			}
+
+			if err := ctrl.SetControllerReference(hdfsCluster, pvc, r.Scheme); err != nil {
+				return err
+			}
+
+			if err := r.Update(ctx, pvc); err != nil {
+				return err
+			}
 		}
 	} else {
 		existingStatefulSet.Spec = desiredStatefulSet.Spec
