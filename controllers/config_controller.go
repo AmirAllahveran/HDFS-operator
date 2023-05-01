@@ -25,7 +25,7 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
   <property>
-     <name>dfs.datanode.hostname</name>
+     <name>dfs.namenode.datanode.registration.ip-hostname-check</name>
      <value>false</value>
      <description>Use IP address instead of hostname for communication between NameNode and DataNodes</description>
   </property>
