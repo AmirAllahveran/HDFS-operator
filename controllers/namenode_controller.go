@@ -171,7 +171,7 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 					Containers: []corev1.Container{
 						{
 							Name:  "hdfs-namenode",
-							Image: "amiralh4/datanode:3.3.1",
+							Image: "amiralh4/namenode:3.3.1",
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "default",
