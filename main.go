@@ -96,6 +96,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "HDFSCluster")
 		os.Exit(1)
 	}
+
+	(&hdfsv1alpha1.HDFSValidator{
+		Scheme: mgr.GetScheme(),
+	}).SetupWebhookWithManager(mgr)
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
