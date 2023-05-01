@@ -14,7 +14,7 @@ import (
 func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
 	cmTemplate := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      hdfsCluster.Name,
+			Name:      hdfsCluster.Name + "-cluster-config",
 			Namespace: hdfsCluster.Namespace,
 			Labels: map[string]string{
 				"app": hdfsCluster.Name,

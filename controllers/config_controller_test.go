@@ -39,7 +39,7 @@ func TestHDFSClusterReconciler_desiredClusterConfigMap(t *testing.T) {
 	}
 
 	// Check the name and namespace of the returned ConfigMap
-	if cm.Name != hdfsCluster.Name || cm.Namespace != hdfsCluster.Namespace {
+	if cm.Name != hdfsCluster.Name+"-cluster-config" || cm.Namespace != hdfsCluster.Namespace {
 		t.Fatalf("unexpected ConfigMap name or namespace: got %s/%s, want %s/%s",
 			cm.Namespace, cm.Name, hdfsCluster.Namespace, hdfsCluster.Name)
 	}
