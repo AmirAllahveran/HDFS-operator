@@ -15,8 +15,8 @@ spec:
   nameNode:
     replicas: "1"
     resources:
-      storage: 10Gi
+      storage: 5Gi
   dataNode:
     replicas: "3"
     resources:
-      storage: 100Gi
+      storage: 10Gi
