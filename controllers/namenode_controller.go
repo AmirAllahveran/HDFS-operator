@@ -12,6 +12,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
+	"time"
 )
 
 func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster) error {
@@ -56,11 +57,21 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 
 		for i := 0; i < replica; i++ {
 			pvc := &corev1.PersistentVolumeClaim{}
-			if err := r.Get(ctx, client.ObjectKey{
-				Namespace: hdfsCluster.Namespace,
-				Name:      hdfsCluster.Name + "-namenode-" + hdfsCluster.Name + "-namenode-" + strconv.Itoa(i),
-			}, pvc); err != nil {
-				return err
+			retry := 0
+			for {
+				if err := r.Get(ctx, client.ObjectKey{
+					Namespace: hdfsCluster.Namespace,
+					Name:      hdfsCluster.Name + "-namenode-" + hdfsCluster.Name + "-namenode-" + strconv.Itoa(i),
+				}, pvc); err != nil {
+					time.Sleep(time.Second * 1)
+					retry++
+					//continue
+				} else {
+					break
+				}
+				if retry > 10 {
+					return err
+				}
 			}
 
 			if err := ctrl.SetControllerReference(hdfsCluster, pvc, r.Scheme); err != nil {
@@ -301,4 +312,5 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 //	}
 //
 //	return true, nil
-//}
+//} hdfscluster-sample-namenode-hdfscluster-sample-namenode-0
+//hdfscluster-sample-namenode-hdfscluster-sample-namenode-0
