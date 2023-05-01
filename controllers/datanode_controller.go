@@ -123,6 +123,9 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 								InitialDelaySeconds: 60,
 								PeriodSeconds:       30,
 							},
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: func() *bool { b := true; return &b }(),
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "hdfs-site",
