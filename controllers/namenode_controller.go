@@ -122,6 +122,7 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 					TargetPort: intstr.FromString("default"),
 				},
 			},
+			ClusterIP: corev1.ClusterIPNone,
 			Selector: map[string]string{
 				"cluster":   hdfsCluster.Name,
 				"app":       "hdfsCluster",
@@ -156,7 +157,7 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 					"component": "namenode",
 				},
 			},
-			ServiceName: hdfsCluster.Name + "-namenode-service",
+			ServiceName: hdfsCluster.Name + "-namenode",
 			Replicas:    stringToInt32(hdfsCluster.Spec.NameNode.Replicas),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
