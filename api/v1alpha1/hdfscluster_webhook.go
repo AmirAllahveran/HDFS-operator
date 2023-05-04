@@ -2,10 +2,8 @@ package v1alpha1
 
 import (
 	"context"
-	"net/http"
-	"strings"
-
 	"k8s.io/apimachinery/pkg/runtime"
+	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -29,10 +27,10 @@ func (v *HDFSValidator) Handle(ctx context.Context, req webhook.AdmissionRequest
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if newHdfs.Spec.ClusterConfig.CustomHadoopConfig.CoreSite != "" &&
-		strings.Contains(newHdfs.Spec.ClusterConfig.CustomHadoopConfig.CoreSite, "dfsReplication") {
-		return admission.Denied("DfsReplication is not allowed in CustomConfig")
-	}
+	//if newHdfs.Spec.ClusterConfig.CustomHadoopConfig.CoreSite != nil &&
+	//	strings.Contains(newHdfs.Spec.ClusterConfig.CustomHadoopConfig.CoreSite, "dfsReplication") {
+	//	return admission.Denied("DfsReplication is not allowed in CustomConfig")
+	//}
 
 	if req.Operation == "UPDATE" {
 		oldHdfs := &HDFSCluster{}

@@ -1,6 +1,15 @@
 package controllers
 
-import "testing"
+import (
+	"context"
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"testing"
+)
 
 func TestStringToInt32(t *testing.T) {
 	tests := []struct {
@@ -48,5 +57,91 @@ func TestInt32Ptr(t *testing.T) {
 		if *got != *tc.output {
 			t.Errorf("int32Ptr(%d) = %d; want %d", tc.input, *got, *tc.output)
 		}
+	}
+}
+
+func TestScaleDeployment(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+
+	namespace := "default"
+	name := "test-deployment"
+	initialReplicas := int32(3)
+	desiredReplicas := int32(2)
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &initialReplicas,
+		},
+	}
+
+	r := &HDFSClusterReconciler{
+		Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(deployment).Build(),
+		Scheme: scheme,
+	}
+
+	err := r.scaleDeployment(context.Background(), name, namespace, desiredReplicas)
+	if err != nil {
+		t.Fatalf("Failed to scale Deployment: %v", err)
+	}
+
+	updatedDeployment := &appsv1.Deployment{}
+	err = r.Client.Get(context.Background(), client.ObjectKey{
+		Namespace: namespace,
+		Name:      name,
+	}, updatedDeployment)
+	if err != nil {
+		t.Fatalf("Failed to get updated Deployment: %v", err)
+	}
+
+	if *updatedDeployment.Spec.Replicas != desiredReplicas {
+		t.Errorf("Deployment replicas mismatch: expected '%d', got '%d'", desiredReplicas, *updatedDeployment.Spec.Replicas)
+	}
+}
+
+func TestScaleStatefulSet(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+
+	namespace := "default"
+	name := "test-deployment"
+	initialReplicas := int32(3)
+	desiredReplicas := int32(2)
+
+	sts := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: appsv1.StatefulSetSpec{
+			Replicas: &initialReplicas,
+		},
+	}
+
+	r := &HDFSClusterReconciler{
+		Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(sts).Build(),
+		Scheme: scheme,
+	}
+
+	err := r.scaleStatefulSet(context.Background(), name, namespace, desiredReplicas)
+	if err != nil {
+		t.Fatalf("Failed to scale Deployment: %v", err)
+	}
+
+	updatedSts := &appsv1.StatefulSet{}
+	err = r.Client.Get(context.Background(), client.ObjectKey{
+		Namespace: namespace,
+		Name:      name,
+	}, updatedSts)
+	if err != nil {
+		t.Fatalf("Failed to get updated Deployment: %v", err)
+	}
+
+	if *updatedSts.Spec.Replicas != desiredReplicas {
+		t.Errorf("Deployment replicas mismatch: expected '%d', got '%d'", desiredReplicas, *updatedSts.Spec.Replicas)
 	}
 }
