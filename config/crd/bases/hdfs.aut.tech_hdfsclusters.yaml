@@ -44,9 +44,29 @@ spec:
                   customHadoopConfig:
                     properties:
                       coreSite:
-                        type: string
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
                       hdfsSite:
-                        type: string
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
                     type: object
                   dfsReplication:
                     default: "2"

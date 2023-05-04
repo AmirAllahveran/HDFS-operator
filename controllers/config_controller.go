@@ -12,6 +12,25 @@ import (
 )
 
 func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
+
+	customCoreSite := ""
+	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.CoreSite {
+		property := `  <property>
+	<name>` + item.Name + `</name>
+	<value>` + item.Value + `</value>
+</property>`
+		customCoreSite = customCoreSite + property + "\n"
+	}
+
+	customHdfsSite := ""
+	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.HdfsSite {
+		property := `  <property>
+	<name>` + item.Name + `</name>
+	<value>` + item.Value + `</value>
+</property>`
+		customHdfsSite = customHdfsSite + property + "\n"
+	}
+
 	cmTemplate := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-cluster-config",
@@ -33,7 +52,7 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
     <name>io.file.buffer.size</name>
     <value>131072</value>
     <description>The size of buffer for use in sequence files.</description>
-  </property>
+  </property>` + customCoreSite + `
 </configuration>`,
 			"hdfs-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -62,7 +81,7 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
     <name>dfs.permissions.enabled</name>
     <value>true</value>
     <description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
-  </property>
+  </property>` + customHdfsSite + `
 </configuration>
 `,
 		},

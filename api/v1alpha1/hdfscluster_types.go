@@ -67,8 +67,13 @@ type ClusterConfig struct {
 }
 
 type CustomHadoopConfig struct {
-	CoreSite string `json:"coreSite,omitempty"`
-	HdfsSite string `json:"hdfsSite,omitempty"`
+	CoreSite []Property `json:"coreSite,omitempty"`
+	HdfsSite []Property `json:"hdfsSite,omitempty"`
+}
+
+type Property struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type Resources struct {
