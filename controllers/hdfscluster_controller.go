@@ -123,6 +123,11 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 		return err
 	}
 
+	err = r.createHadoop(ctx, hdfs)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

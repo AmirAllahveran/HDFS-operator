@@ -23,3 +23,30 @@ func TestStringToInt32(t *testing.T) {
 		})
 	}
 }
+
+// TestInt32Ptr is the unit test function for int32Ptr
+func TestInt32Ptr(t *testing.T) {
+	testCases := []struct {
+		input  int32
+		output *int32
+	}{
+		{0, new(int32)},
+		{1, new(int32)},
+		{-1, new(int32)},
+		{12345, new(int32)},
+		{-12345, new(int32)},
+		{2147483647, new(int32)},
+		{-2147483648, new(int32)},
+	}
+
+	for _, tc := range testCases {
+		// Set the expected value of the pointer
+		*tc.output = tc.input
+
+		// Call int32Ptr function and compare the result with the expected output
+		got := int32Ptr(tc.input)
+		if *got != *tc.output {
+			t.Errorf("int32Ptr(%d) = %d; want %d", tc.input, *got, *tc.output)
+		}
+	}
+}
