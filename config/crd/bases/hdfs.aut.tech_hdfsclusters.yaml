@@ -78,6 +78,25 @@ spec:
               dataNode:
                 properties:
                   replicas:
+                    pattern: ^[123]$
+                    type: string
+                  resources:
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                      storage:
+                        type: string
+                    required:
+                    - storage
+                    type: object
+                required:
+                - replicas
+                type: object
+              journalNode:
+                properties:
+                  replicas:
                     pattern: ^[13]$
                     type: string
                   resources:
@@ -98,6 +117,25 @@ spec:
                 properties:
                   replicas:
                     pattern: ^[12]$
+                    type: string
+                  resources:
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                      storage:
+                        type: string
+                    required:
+                    - storage
+                    type: object
+                required:
+                - replicas
+                type: object
+              zookeeper:
+                properties:
+                  replicas:
+                    pattern: ^[13]$
                     type: string
                   resources:
                     properties:
