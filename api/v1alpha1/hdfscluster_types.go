@@ -27,6 +27,8 @@ type HDFSClusterSpec struct {
 	ClusterConfig ClusterConfig `json:"clusterConfig"`
 	NameNode      NameNode      `json:"nameNode"`
 	DataNode      DataNode      `json:"dataNode"`
+	JournalNode   JournalNode   `json:"journalNode,omitempty"`
+	Zookeeper     Zookeeper     `json:"zookeeper,omitempty"`
 }
 
 type NameNode struct {
@@ -37,27 +39,25 @@ type NameNode struct {
 }
 
 type DataNode struct {
+	// +kubebuilder:validation:Pattern:=^[123]$
+	Replicas string `json:"replicas"`
+	// +kubebuilder:validation:Optional
+	Resources Resources `json:"resources"`
+}
+
+type Zookeeper struct {
 	// +kubebuilder:validation:Pattern:=^[13]$
 	Replicas string `json:"replicas"`
 	// +kubebuilder:validation:Optional
 	Resources Resources `json:"resources"`
 }
 
-//type Zookeeper struct {
-//	// +kubebuilder:validation:Pattern:=^[13]$
-//	// +kubebuilder:default:=1
-//	Replica string `json:"replica"`
-//	// +kubebuilder:validation:Optional
-//	Resources Resources `json:"resources"`
-//}
-//
-//type JournalNode struct {
-//	// +kubebuilder:validation:Pattern:=^[13]$
-//	// +kubebuilder:default:=1
-//	Replica string `json:"replica"`
-//	// +kubebuilder:validation:Optional
-//	Resources Resources `json:"resources"`
-//}
+type JournalNode struct {
+	// +kubebuilder:validation:Pattern:=^[13]$
+	Replicas string `json:"replicas"`
+	// +kubebuilder:validation:Optional
+	Resources Resources `json:"resources"`
+}
 
 type ClusterConfig struct {
 	// +kubebuilder:validation:Pattern:=^[123]$
