@@ -127,11 +127,6 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 		return err
 	}
 
-	//hdfs.Status.CreationTime = time.Now().String()
-	//errStatus := r.Status().Update(ctx, hdfs)
-	//if errStatus != nil {
-	//	return errStatus
-	//}
 	return nil
 }
 
