@@ -53,6 +53,12 @@ func (r *HDFSClusterReconciler) desiredHadoopDeployment(hdfsCluster *v1alpha1.HD
 							//		ContainerPort: 9864,
 							//	},
 							//},
+							Command: []string{
+								"sleep",
+							},
+							Args: []string{
+								"1000000000",
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "hdfs-site",
