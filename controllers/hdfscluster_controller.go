@@ -18,15 +18,13 @@ package controllers
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
-
 	hdfsv1alpha1 "github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // HDFSClusterReconciler reconciles a HDFSCluster object
@@ -129,11 +127,11 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 		return err
 	}
 
-	hdfs.Status.CreationTime = time.Now().String()
-	errStatus := r.Status().Update(ctx, hdfs)
-	if errStatus != nil {
-		return errStatus
-	}
+	//hdfs.Status.CreationTime = time.Now().String()
+	//errStatus := r.Status().Update(ctx, hdfs)
+	//if errStatus != nil {
+	//	return errStatus
+	//}
 	return nil
 }
 
