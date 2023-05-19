@@ -53,8 +53,12 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 			},
 		},
 		Data: map[string]string{
-			"core-site.xml": coreSite,
-			"hdfs-site.xml": hdfsSite,
+			"core-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>` + coreSite + `</configuration>`,
+			"hdfs-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>` + hdfsSite + `</configuration>`,
 		},
 	}
 	if err := ctrl.SetControllerReference(hdfsCluster, cmTemplate, r.Scheme); err != nil {
@@ -65,9 +69,7 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 }
 
 func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster, customCoreSite string) string {
-	coreSite := `<?xml version="1.0" encoding="UTF-8"?>
-	<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-	<configuration><property>
+	coreSite := `<property>
 <name>fs.defaultFS</name>
 <value>hdfs://` + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + `.svc.cluster.local:9000</value>
 <description>The default filesystem URI.</description>
@@ -76,9 +78,9 @@ func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster, customCoreSite stri
 	<name>io.file.buffer.size</name>
 	<value>131072</value>
 	<description>The size of buffer for use in sequence files.</description>
-</property>` + customCoreSite + `</configuration>`
+</property>` + customCoreSite
 
-	coreSite = xmlfmt.FormatXML(coreSite, "\t", "  ")
+	coreSite = xmlfmt.FormatXML(coreSite, "", "  ")
 	return coreSite
 }
 
@@ -89,10 +91,7 @@ func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster, customCoreSite string) 
 			hdfsCluster.Name + "-zookeeper-1." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
 			hdfsCluster.Name + "-zookeeper-2." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
 	}
-	coreSite := `<?xml version="1.0" encoding="UTF-8"?>
-	<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-	<configuration>
-  <property>
+	coreSite := `<property>
     <name>fs.defaultFS</name>
     <value>hdfs://hdfs-k8s</value>
   </property>
@@ -104,15 +103,13 @@ func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster, customCoreSite string) 
     <name>io.file.buffer.size</name>
     <value>131072</value>
     <description>Size of read/write buffer used in SequenceFiles.</description>
-  </property>` + customCoreSite + `</configuration>`
-	coreSite = xmlfmt.FormatXML(coreSite, "\t", "  ")
+  </property>` + customCoreSite
+	coreSite = xmlfmt.FormatXML(coreSite, "", "  ")
 	return coreSite
 }
 
 func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster, customHdfsSite string) string {
-	hdfsSite := `<?xml version="1.0" encoding="UTF-8"?>
-	<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-	<configuration><property>
+	hdfsSite := `<property>
 	<name>dfs.namenode.datanode.registration.ip-hostname-check</name>
 	<value>false</value>
 	<description>Use IP address instead of hostname for communication between NameNode and DataNodes</description>
@@ -136,8 +133,8 @@ func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster, customHdfsSite stri
 	<name>dfs.permissions.enabled</name>
 	<value>true</value>
 	<description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
-	</property>` + customHdfsSite + `</configuration>`
-	hdfsSite = xmlfmt.FormatXML(hdfsSite, "\t", "  ")
+	</property>` + customHdfsSite
+	hdfsSite = xmlfmt.FormatXML(hdfsSite, "", "  ")
 	return hdfsSite
 }
 
@@ -148,9 +145,7 @@ func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster, customHdfsSite string) 
 			hdfsCluster.Name + "-journalnode-1." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485;" +
 			hdfsCluster.Name + "-journalnode-2." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485"
 	}
-	hdfsSite := `<?xml version="1.0" encoding="UTF-8"?>
-	<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-	<configuration><property>
+	hdfsSite := `<property>
     <name>dfs.nameservices</name>
     <value>hdfs-k8s</value>
   </property>
@@ -217,8 +212,8 @@ func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster, customHdfsSite string) 
     <name>dfs.permissions.enabled</name>
     <value>true</value>
     <description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
-  </property>` + customHdfsSite + `</configuration>`
-	hdfsSite = xmlfmt.FormatXML(hdfsSite, "\t", "  ")
+  </property>` + customHdfsSite
+	hdfsSite = xmlfmt.FormatXML(hdfsSite, "", "  ")
 	return hdfsSite
 }
 
