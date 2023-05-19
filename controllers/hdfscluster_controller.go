@@ -127,6 +127,17 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 		return err
 	}
 
+	if hdfs.Spec.NameNode.Replicas == "2" {
+		err = r.createOrUpdateJournalNode(ctx, hdfs)
+		if err != nil {
+			return err
+		}
+		err = r.createOrUpdateZookeeper(ctx, hdfs)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

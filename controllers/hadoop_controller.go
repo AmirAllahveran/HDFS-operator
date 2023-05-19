@@ -47,18 +47,6 @@ func (r *HDFSClusterReconciler) desiredHadoopDeployment(hdfsCluster *v1alpha1.HD
 						{
 							Name:  "hadoop",
 							Image: "amiralh4/hadoop:3.3.1",
-							//Ports: []corev1.ContainerPort{
-							//	{
-							//		Name:          "default",
-							//		ContainerPort: 9864,
-							//	},
-							//},
-							Command: []string{
-								"sleep",
-							},
-							Args: []string{
-								"1000000000",
-							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "hdfs-site",
