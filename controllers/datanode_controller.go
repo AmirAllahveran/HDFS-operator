@@ -101,32 +101,32 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 									ContainerPort: 9864,
 								},
 							},
-							LivenessProbe: &corev1.Probe{
-								ProbeHandler: corev1.ProbeHandler{
-									Exec: &corev1.ExecAction{
-										Command: []string{
-											"/bin/bash",
-											"-c",
-											"/scripts/check-status.sh",
-										},
-									},
-								},
-								InitialDelaySeconds: 60,
-								PeriodSeconds:       30,
-							},
-							ReadinessProbe: &corev1.Probe{
-								ProbeHandler: corev1.ProbeHandler{
-									Exec: &corev1.ExecAction{
-										Command: []string{
-											"/bin/sh",
-											"-c",
-											"/scripts/check-status.sh",
-										},
-									},
-								},
-								InitialDelaySeconds: 60,
-								PeriodSeconds:       30,
-							},
+							//LivenessProbe: &corev1.Probe{
+							//	ProbeHandler: corev1.ProbeHandler{
+							//		Exec: &corev1.ExecAction{
+							//			Command: []string{
+							//				"/bin/bash",
+							//				"-c",
+							//				"/scripts/check-status.sh",
+							//			},
+							//		},
+							//	},
+							//	InitialDelaySeconds: 60,
+							//	PeriodSeconds:       30,
+							//},
+							//ReadinessProbe: &corev1.Probe{
+							//	ProbeHandler: corev1.ProbeHandler{
+							//		Exec: &corev1.ExecAction{
+							//			Command: []string{
+							//				"/bin/sh",
+							//				"-c",
+							//				"/scripts/check-status.sh",
+							//			},
+							//		},
+							//	},
+							//	InitialDelaySeconds: 60,
+							//	PeriodSeconds:       30,
+							//},
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: func() *bool { b := true; return &b }(),
 							},
