@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/policy/v1"
 	"k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,11 +18,12 @@ import (
 	"testing"
 )
 
-func TestDesiredJournalNodePodDisruptionBudget(t *testing.T) {
+func TestDesiredJournalNode(t *testing.T) {
 	// Set up a fake client to mock API calls
 	s := runtime.NewScheme()
 	_ = corev1.AddToScheme(s)
 	_ = appsv1.AddToScheme(s)
+	_ = v1.AddToScheme(s)
 	_ = v1alpha1.AddToScheme(s) // Add your custom resource to the scheme
 
 	hdfs := &v1alpha1.HDFSCluster{

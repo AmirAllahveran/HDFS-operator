@@ -5,6 +5,7 @@ import (
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/policy/v1"
 	"k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -15,15 +16,15 @@ import (
 	"strconv"
 )
 
-func (r *HDFSClusterReconciler) desiredJournalNodePodDisruptionBudget(hdfs *v1alpha1.HDFSCluster) (*v1beta1.PodDisruptionBudget, error) {
+func (r *HDFSClusterReconciler) desiredJournalNodePodDisruptionBudget(hdfs *v1alpha1.HDFSCluster) (*v1.PodDisruptionBudget, error) {
 	replicas, _ := strconv.ParseInt(hdfs.Spec.JournalNode.Replicas, 10, 32)
 	minAvailable := replicas/2 + 1
-	pdbTemplate := &v1beta1.PodDisruptionBudget{
+	pdbTemplate := &v1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfs.Name + "-journalnode",
 			Namespace: hdfs.Namespace,
 		},
-		Spec: v1beta1.PodDisruptionBudgetSpec{
+		Spec: v1.PodDisruptionBudgetSpec{
 			MinAvailable: &intstr.IntOrString{
 				IntVal: int32(minAvailable),
 			},
