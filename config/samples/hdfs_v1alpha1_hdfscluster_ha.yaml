@@ -13,7 +13,7 @@ spec:
   clusterConfig:
     dfsReplication: "1"
   nameNode:
-    replicas: "1"
+    replicas: "2"
     resources:
       storage: 5Gi
   dataNode:
