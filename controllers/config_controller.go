@@ -15,7 +15,7 @@ import (
 
 func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
 
-	customCoreSite := ""
+	customCoreSite := "\n"
 	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.CoreSite {
 		property := `  <property>
 	<name>` + item.Name + `</name>
@@ -24,7 +24,17 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 		customCoreSite = customCoreSite + property + "\n"
 	}
 
-	customHdfsSite := ""
+	coreSite := ""
+	hdfsSite := ""
+	if hdfsCluster.Spec.NameNode.Replicas == "1" {
+		coreSite = configCoreSiteSingle(hdfsCluster)
+		hdfsSite = configHdfsSiteSingle(hdfsCluster)
+	} else {
+		coreSite = configCoreSiteHA(hdfsCluster)
+		hdfsSite = configHdfsSiteHA(hdfsCluster)
+	}
+
+	customHdfsSite := "\n"
 	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.HdfsSite {
 		property := `  <property>
 	<name>` + item.Name + `</name>
@@ -44,25 +54,153 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 		Data: map[string]string{
 			"core-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-<configuration>
+<configuration> ` + coreSite + customCoreSite + `
+</configuration>`,
+			"hdfs-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>` + hdfsSite + customHdfsSite + `
+</configuration>
+`,
+		},
+	}
+	if err := ctrl.SetControllerReference(hdfsCluster, cmTemplate, r.Scheme); err != nil {
+		return cmTemplate, err
+	}
+
+	return cmTemplate, nil
+}
+
+func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
+	coreSite := `<property>
+<name>fs.defaultFS</name>
+<value>hdfs://` + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + `.svc.cluster.local:9000</value>
+<description>The default filesystem URI.</description>
+</property>
+<property>
+	<name>io.file.buffer.size</name>
+	<value>131072</value>
+	<description>The size of buffer for use in sequence files.</description>
+</property>`
+
+	return coreSite
+}
+
+func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
+	zookeeperQuorum := hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
+	if hdfsCluster.Spec.Zookeeper.Replicas == "3" {
+		zookeeperQuorum = hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
+			hdfsCluster.Name + "-zookeeper-1." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
+			hdfsCluster.Name + "-zookeeper-2." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
+	}
+	coreSite := `<configuration>
   <property>
     <name>fs.defaultFS</name>
-    <value>hdfs://` + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + `.svc.cluster.local:9000</value>
-    <description>The default filesystem URI.</description>
+    <value>hdfs://mycluster</value>
+  </property>
+  <property>
+    <name>ha.zookeeper.quorum</name>
+    <value>` + zookeeperQuorum + `</value>
+  </property>
+  <property>
+    <name>hadoop.tmp.dir</name>
+    <value>/app/hadoop/tmp</value>
+    <description>A base for other temporary directories.</description>
   </property>
   <property>
     <name>io.file.buffer.size</name>
     <value>131072</value>
-    <description>The size of buffer for use in sequence files.</description>
-  </property>` + customCoreSite + `
-</configuration>`,
-			"hdfs-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-<configuration>
+    <description>Size of read/write buffer used in SequenceFiles.</description>
+  </property>
+</configuration>
+`
+
+	return coreSite
+}
+
+func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
+	hdfsSite := ` <property>
+	<name>dfs.namenode.datanode.registration.ip-hostname-check</name>
+	<value>false</value>
+	<description>Use IP address instead of hostname for communication between NameNode and DataNodes</description>
+	</property>
+	<property>
+	<name>dfs.namenode.name.dir</name>
+	<value>/data/hadoop/namenode</value>
+	<description>Path on the local filesystem where the NameNode stores the namespace and transaction logs persistently.</description>
+	</property>
+	<property>
+	<name>dfs.datanode.data.dir</name>
+	<value>/data/hadoop/datanode</value>
+	<description>Comma-separated list of paths on the local filesystem of a DataNode where it stores its blocks.</description>
+	</property>
+	<property>
+	<name>dfs.replication</name>
+	<value>` + hdfsCluster.Spec.ClusterConfig.DfsReplication + `</value>
+	<description>Default block replication. The actual number of replications can be specified when the file is created.</description>
+	</property>
+	<property>
+	<name>dfs.permissions.enabled</name>
+	<value>true</value>
+	<description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
+	</property>`
+
+	return hdfsSite
+}
+
+func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
+	qjournal := hdfsCluster.Name + "-journalnode-0." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485"
+	if hdfsCluster.Spec.JournalNode.Replicas == "3" {
+		qjournal = hdfsCluster.Name + "-journalnode-0." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485;" +
+			hdfsCluster.Name + "-journalnode-1." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485;" +
+			hdfsCluster.Name + "-journalnode-2." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485"
+	}
+	hdfsSite := `  <property>
+    <name>dfs.nameservices</name>
+    <value>hdfs-k8s</value>
+  </property>
   <property>
-     <name>dfs.namenode.datanode.registration.ip-hostname-check</name>
-     <value>false</value>
-     <description>Use IP address instead of hostname for communication between NameNode and DataNodes</description>
+    <name>dfs.ha.namenodes.hdfs-k8s</name>
+    <value>nn0,nn1</value>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.hdfs-k8s.nn0</name>
+    <value>` + hdfsCluster.Name + "-namenode-0." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local" + `:9000</value>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.hdfs-k8s.nn1</name>
+    <value>` + hdfsCluster.Name + "-namenode-1." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local" + `:9000</value>
+  </property>
+  <property>
+    <name>dfs.namenode.http-address.hdfs-k8s.nn1</name>
+    <value>` + hdfsCluster.Name + "-namenode-0." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local" + `:9870</value>
+  </property>
+  <property>
+    <name>dfs.namenode.http-address.hdfs-k8s.nn2</name>
+    <value>` + hdfsCluster.Name + "-namenode-1." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local" + `:9870</value>
+  </property>
+  <property>
+    <name>dfs.namenode.shared.edits.dir</name>
+    <value>qjournal://` + qjournal + `/hdfs-k8s</value>
+  </property>
+  <property>
+    <name>dfs.client.failover.proxy.provider.hdfs-k8s</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+  <property>
+    <name>dfs.ha.automatic-failover.enabled</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>dfs.journalnode.edits.dir</name>
+    <value>/data/hadoop/journalnode</value>
+  </property>
+  <property>
+    <name>dfs.ha.fencing.methods</name>
+    <value>shell(/bin/true)</value>
+  </property>
+  <property>
+    <name>dfs.namenode.datanode.registration.ip-hostname-check</name>
+    <value>false</value>
   </property>
   <property>
     <name>dfs.namenode.name.dir</name>
@@ -83,16 +221,8 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
     <name>dfs.permissions.enabled</name>
     <value>true</value>
     <description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
-  </property>` + customHdfsSite + `
-</configuration>
-`,
-		},
-	}
-	if err := ctrl.SetControllerReference(hdfsCluster, cmTemplate, r.Scheme); err != nil {
-		return cmTemplate, err
-	}
-
-	return cmTemplate, nil
+  </property>`
+	return hdfsSite
 }
 
 //func (r *HDFSClusterReconciler) clusterConfigExists(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster) (bool, error) {
