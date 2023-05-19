@@ -1,0 +1,30 @@
+apiVersion: hdfs.aut.tech/v1alpha1
+kind: HDFSCluster
+metadata:
+  labels:
+    app.kubernetes.io/name: hdfscluster
+    app.kubernetes.io/instance: hdfscluster-sample
+    app.kubernetes.io/part-of: hdfs-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: hdfs-operator
+  name: hdfscluster-sample
+  namespace: sample
+spec:
+  clusterConfig:
+    dfsReplication: "1"
+  nameNode:
+    replicas: "1"
+    resources:
+      storage: 5Gi
+  dataNode:
+    replicas: "3"
+    resources:
+      storage: 10Gi
+  journalNode:
+    replicas: "1"
+    resources:
+      storage: 3Gi
+  zookeeper:
+    replicas: "1"
+    resources:
+      storage: 3Gi
