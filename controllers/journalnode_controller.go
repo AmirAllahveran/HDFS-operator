@@ -6,7 +6,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/policy/v1"
-	"k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -108,7 +107,7 @@ func (r *HDFSClusterReconciler) createOrUpdateJournalNode(ctx context.Context, h
 	}
 
 	// Check if the PodDisruptionBudget already exists
-	existingPodDisruptionBudget := &v1beta1.PodDisruptionBudget{}
+	existingPodDisruptionBudget := &v1.PodDisruptionBudget{}
 	err = r.Get(ctx, client.ObjectKeyFromObject(desiredJournalNodePodDisruptionBudget), existingPodDisruptionBudget)
 	if err != nil && !errors.IsNotFound(err) {
 		return err

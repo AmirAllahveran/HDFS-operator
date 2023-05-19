@@ -7,7 +7,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/policy/v1"
-	"k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -147,7 +146,7 @@ func TestHDFSClusterReconciler_createOrUpdateJournalNode(t *testing.T) {
 	s := runtime.NewScheme()
 	_ = corev1.AddToScheme(s)
 	_ = appsv1.AddToScheme(s)
-	_ = v1beta1.AddToScheme(s)
+	_ = v1.AddToScheme(s)
 	_ = v1alpha1.AddToScheme(s) // Add your custom resource to the scheme
 
 	// Create a HDFSCluster object
@@ -190,7 +189,7 @@ func TestHDFSClusterReconciler_createOrUpdateJournalNode(t *testing.T) {
 	err = r.Get(ctx, types.NamespacedName{Name: hdfs.Name + "-journalnode", Namespace: hdfs.Namespace}, service)
 	assert.NoError(t, err)
 
-	pdb := &v1beta1.PodDisruptionBudget{}
+	pdb := &v1.PodDisruptionBudget{}
 	err = r.Get(ctx, types.NamespacedName{Name: hdfs.Name + "-journalnode", Namespace: hdfs.Namespace}, pdb)
 	assert.NoError(t, err)
 
