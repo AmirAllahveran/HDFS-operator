@@ -19,11 +19,13 @@ package controllers
 import (
 	"context"
 	hdfsv1alpha1 "github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -43,7 +45,7 @@ type HDFSClusterReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *HDFSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	//logger := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	//var kubeConfig *string
 	//config, err := rest.InClusterConfig()
@@ -98,7 +100,7 @@ func (r *HDFSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	//		return ctrl.Result{}, err
 	//	}
 	//}
-	err = r.createOrUpdateComponents(ctx, &hdfs)
+	err = r.createOrUpdateComponents(ctx, &hdfs, logger)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -106,32 +108,35 @@ func (r *HDFSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	return ctrl.Result{}, nil
 }
 
-func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hdfs *hdfsv1alpha1.HDFSCluster) error {
+func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hdfs *hdfsv1alpha1.HDFSCluster, logger logr.Logger) error {
+	logger.Info("createOrUpdateConfigmap", "name", hdfs.Name)
 	err := r.createOrUpdateConfigmap(ctx, hdfs)
 	if err != nil {
 		return err
 	}
-
+	logger.Info("createOrUpdateDataNode", "name", hdfs.Name)
 	err = r.createOrUpdateDataNode(ctx, hdfs)
 	if err != nil {
 		return err
 	}
-
+	logger.Info("createOrUpdateNameNode", "name", hdfs.Name)
 	err = r.createOrUpdateNameNode(ctx, hdfs)
 	if err != nil {
 		return err
 	}
-
+	logger.Info("createHadoop", "name", hdfs.Name)
 	err = r.createHadoop(ctx, hdfs)
 	if err != nil {
 		return err
 	}
 
 	if hdfs.Spec.NameNode.Replicas == "2" {
+		logger.Info("createOrUpdateJournalNode", "name", hdfs.Name)
 		err = r.createOrUpdateJournalNode(ctx, hdfs)
 		if err != nil {
 			return err
 		}
+		logger.Info("createOrUpdateZookeeper", "name", hdfs.Name)
 		err = r.createOrUpdateZookeeper(ctx, hdfs)
 		if err != nil {
 			return err

@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -135,7 +134,6 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 
 	// Create or update the StatefulSet
 	if errors.IsNotFound(err) {
-		fmt.Print("creating sts nn")
 		if err := r.Create(ctx, desiredStatefulSet); err != nil {
 			return err
 		}
@@ -170,7 +168,6 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		//	}
 		//}
 	} else {
-		fmt.Print("updating sts nn")
 		existingStatefulSet.Spec = desiredStatefulSet.Spec
 		if err := r.Update(ctx, existingStatefulSet); err != nil {
 			return err
@@ -566,5 +563,4 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 //	}
 //
 //	return true, nil
-//} hdfscluster-sample-namenode-hdfscluster-sample-namenode-0
-//hdfscluster-sample-namenode-hdfscluster-sample-namenode-0
+//}
