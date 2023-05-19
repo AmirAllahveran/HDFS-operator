@@ -101,7 +101,7 @@ func TestHDFSClusterReconciler_desiredNameNodeStatefulSet(t *testing.T) {
 		Scheme: s,
 	}
 
-	sts, err := r.desiredNameNodeStatefulSet(hdfsCluster)
+	sts, err := r.desiredSingleNameNodeStatefulSet(hdfsCluster)
 	assert.Nil(t, err)
 
 	expectedName := hdfsCluster.Name + "-namenode"
