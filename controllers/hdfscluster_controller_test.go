@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 )
 
@@ -46,8 +47,9 @@ func TestHDFSClusterReconciler_createOrUpdateComponents(t *testing.T) {
 		Scheme: s,
 	}
 	ctx := context.Background()
+	logger := log.FromContext(ctx)
 
-	err := r.createOrUpdateComponents(ctx, hdfsCluster)
+	err := r.createOrUpdateComponents(ctx, hdfsCluster, logger)
 	require.NoError(t, err)
 
 	// Call desiredClusterConfigMap
