@@ -194,6 +194,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 							Name: "datanode-script",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
+									DefaultMode: stringToInt32("0755"),
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: hdfsCluster.Name + "-datanode-script",
 									},
