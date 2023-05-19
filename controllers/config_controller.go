@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	hdfsv1alpha1 "github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"github.com/go-xmlfmt/xmlfmt"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,32 +16,32 @@ import (
 
 func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
 
-	customCoreSite := "\n"
+	customCoreSite := ""
 	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.CoreSite {
 		property := `  <property>
 	<name>` + item.Name + `</name>
 	<value>` + item.Value + `</value>
 </property>`
-		customCoreSite = customCoreSite + property + "\n"
+		customCoreSite = customCoreSite + property
 	}
 
-	coreSite := ""
-	hdfsSite := ""
-	if hdfsCluster.Spec.NameNode.Replicas == "1" {
-		coreSite = configCoreSiteSingle(hdfsCluster)
-		hdfsSite = configHdfsSiteSingle(hdfsCluster)
-	} else {
-		coreSite = configCoreSiteHA(hdfsCluster)
-		hdfsSite = configHdfsSiteHA(hdfsCluster)
-	}
-
-	customHdfsSite := "\n"
+	customHdfsSite := ""
 	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.HdfsSite {
 		property := `  <property>
 	<name>` + item.Name + `</name>
 	<value>` + item.Value + `</value>
 </property>`
-		customHdfsSite = customHdfsSite + property + "\n"
+		customHdfsSite = customHdfsSite + property
+	}
+
+	coreSite := ""
+	hdfsSite := ""
+	if hdfsCluster.Spec.NameNode.Replicas == "1" {
+		coreSite = configCoreSiteSingle(hdfsCluster, customCoreSite)
+		hdfsSite = configHdfsSiteSingle(hdfsCluster, customCoreSite)
+	} else {
+		coreSite = configCoreSiteHA(hdfsCluster, customHdfsSite)
+		hdfsSite = configHdfsSiteHA(hdfsCluster, customHdfsSite)
 	}
 
 	cmTemplate := &corev1.ConfigMap{
@@ -52,15 +53,8 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 			},
 		},
 		Data: map[string]string{
-			"core-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-<configuration> ` + coreSite + customCoreSite + `
-</configuration>`,
-			"hdfs-site.xml": `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-<configuration>` + hdfsSite + customHdfsSite + `
-</configuration>
-`,
+			"core-site.xml": coreSite,
+			"hdfs-site.xml": hdfsSite,
 		},
 	}
 	if err := ctrl.SetControllerReference(hdfsCluster, cmTemplate, r.Scheme); err != nil {
@@ -70,8 +64,10 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 	return cmTemplate, nil
 }
 
-func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
-	coreSite := `<property>
+func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster, customCoreSite string) string {
+	coreSite := `<?xml version="1.0" encoding="UTF-8"?>
+	<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+	<configuration><property>
 <name>fs.defaultFS</name>
 <value>hdfs://` + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + `.svc.cluster.local:9000</value>
 <description>The default filesystem URI.</description>
@@ -80,45 +76,43 @@ func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 	<name>io.file.buffer.size</name>
 	<value>131072</value>
 	<description>The size of buffer for use in sequence files.</description>
-</property>`
+</property>` + customCoreSite + `</configuration>`
 
+	coreSite = xmlfmt.FormatXML(coreSite, "\t", "  ")
 	return coreSite
 }
 
-func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
+func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster, customCoreSite string) string {
 	zookeeperQuorum := hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
 	if hdfsCluster.Spec.Zookeeper.Replicas == "3" {
 		zookeeperQuorum = hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
 			hdfsCluster.Name + "-zookeeper-1." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
 			hdfsCluster.Name + "-zookeeper-2." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
 	}
-	coreSite := `<configuration>
+	coreSite := `<?xml version="1.0" encoding="UTF-8"?>
+	<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+	<configuration>
   <property>
     <name>fs.defaultFS</name>
-    <value>hdfs://mycluster</value>
+    <value>hdfs://hdfs-k8s</value>
   </property>
   <property>
     <name>ha.zookeeper.quorum</name>
     <value>` + zookeeperQuorum + `</value>
   </property>
   <property>
-    <name>hadoop.tmp.dir</name>
-    <value>/app/hadoop/tmp</value>
-    <description>A base for other temporary directories.</description>
-  </property>
-  <property>
     <name>io.file.buffer.size</name>
     <value>131072</value>
     <description>Size of read/write buffer used in SequenceFiles.</description>
-  </property>
-</configuration>
-`
-
+  </property>` + customCoreSite + `</configuration>`
+	coreSite = xmlfmt.FormatXML(coreSite, "\t", "  ")
 	return coreSite
 }
 
-func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
-	hdfsSite := ` <property>
+func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster, customHdfsSite string) string {
+	hdfsSite := `<?xml version="1.0" encoding="UTF-8"?>
+	<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+	<configuration><property>
 	<name>dfs.namenode.datanode.registration.ip-hostname-check</name>
 	<value>false</value>
 	<description>Use IP address instead of hostname for communication between NameNode and DataNodes</description>
@@ -142,19 +136,21 @@ func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 	<name>dfs.permissions.enabled</name>
 	<value>true</value>
 	<description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
-	</property>`
-
+	</property>` + customHdfsSite + `</configuration>`
+	hdfsSite = xmlfmt.FormatXML(hdfsSite, "\t", "  ")
 	return hdfsSite
 }
 
-func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
+func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster, customHdfsSite string) string {
 	qjournal := hdfsCluster.Name + "-journalnode-0." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485"
 	if hdfsCluster.Spec.JournalNode.Replicas == "3" {
 		qjournal = hdfsCluster.Name + "-journalnode-0." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485;" +
 			hdfsCluster.Name + "-journalnode-1." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485;" +
 			hdfsCluster.Name + "-journalnode-2." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485"
 	}
-	hdfsSite := `  <property>
+	hdfsSite := `<?xml version="1.0" encoding="UTF-8"?>
+	<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+	<configuration><property>
     <name>dfs.nameservices</name>
     <value>hdfs-k8s</value>
   </property>
@@ -221,7 +217,8 @@ func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
     <name>dfs.permissions.enabled</name>
     <value>true</value>
     <description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
-  </property>`
+  </property>` + customHdfsSite + `</configuration>`
+	hdfsSite = xmlfmt.FormatXML(hdfsSite, "\t", "  ")
 	return hdfsSite
 }
 

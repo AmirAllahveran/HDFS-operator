@@ -3,6 +3,7 @@ module github.com/AmirAllahveran/HDFS-operator
 go 1.19
 
 require (
+	github.com/go-xmlfmt/xmlfmt v1.1.2
 	github.com/onsi/ginkgo/v2 v2.6.0
 	github.com/onsi/gomega v1.24.1
 	github.com/stretchr/testify v1.8.0
