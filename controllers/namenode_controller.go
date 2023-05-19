@@ -39,7 +39,7 @@ set -o xtrace
 #!/bin/bash
 _METADATA_DIR=$NAMENODE_DIR/current
 
-if [[ "$MY_POD" = "$NAMENODE_POD_0" ]]; then
+if [[ "$POD_NAME" = "$NAMENODE_POD_0" ]]; then
     echo "Running on NameNode Pod 0."
     if [[ ! -d $_METADATA_DIR ]]; then
         echo "Formatting NameNode on Pod 0..."
@@ -58,7 +58,7 @@ if [[ "$MY_POD" = "$NAMENODE_POD_0" ]]; then
         echo "ZKFC format successful. Touching $_ZKFC_FORMATTED..."
         touch $_ZKFC_FORMATTED
     fi
-elif [[ "$MY_POD" = "$NAMENODE_POD_1" ]]; then
+elif [[ "$POD_NAME" = "$NAMENODE_POD_1" ]]; then
     echo "Running on NameNode Pod 1."
     if [[ ! -d $_METADATA_DIR ]]; then
         echo "Bootstrapping Standby NameNode on Pod 1..."
@@ -403,7 +403,7 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name: "MY_POD",
+									Name: "POD_NAME",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "metadata.name",
@@ -500,6 +500,16 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: hdfsCluster.Name + "-namenode",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         "hdfs.aut.tech/v1alpha1",
+								BlockOwnerDeletion: func() *bool { b := true; return &b }(),
+								Controller:         func() *bool { b := true; return &b }(),
+								Kind:               "HDFSCluster",
+								Name:               hdfsCluster.Name,
+								UID:                hdfsCluster.UID,
+							},
+						},
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
 						AccessModes: []corev1.PersistentVolumeAccessMode{
