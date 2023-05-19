@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -13,11 +14,98 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func (r *HDFSClusterReconciler) desiredHANameNodeConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
+	configMapTemplate := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hdfsCluster.Name + "-ha-namenode-script",
+			Namespace: hdfsCluster.Namespace,
+			Labels: map[string]string{
+				"cluster":   hdfsCluster.Name,
+				"app":       "hdfsCluster",
+				"component": "namenode",
+			},
+		},
+		Data: map[string]string{
+			"start-namenode-ha.sh": `#!/usr/bin/env bash
+# Exit on error. Append "|| true" if you expect an error.
+set -o errexit
+# Exit on error inside any functions or subshells.
+set -o errtrace
+# Do not allow use of undefined vars. Use ${VAR:-} to use an undefined VAR
+set -o nounset
+set -o pipefail
+# Turn on traces, useful while debugging.
+set -o xtrace
+
+#!/bin/bash
+_METADATA_DIR=$NAMENODE_DIR/current
+
+if [[ "$MY_POD" = "$NAMENODE_POD_0" ]]; then
+    echo "Running on NameNode Pod 0."
+    if [[ ! -d $_METADATA_DIR ]]; then
+        echo "Formatting NameNode on Pod 0..."
+        hdfs namenode -format -nonInteractive hdfs-k8s ||
+            (echo "NameNode format failed, removing metadata directory..." ; rm -rf $_METADATA_DIR; exit 1)
+    fi
+    _ZKFC_FORMATTED=$NAMENODE_DIR/current/.hdfs-k8s-zkfc-formatted
+    if [[ ! -f $_ZKFC_FORMATTED ]]; then
+        echo "Formatting Zookeeper Failover Controller..."
+        _OUT=$(hdfs zkfc -formatZK -nonInteractive 2>&1)
+        # zkfc masks fatal exceptions and returns exit code 0
+        if (echo $_OUT | grep -q "FATAL"); then
+            echo "ZKFC format failed with fatal error."
+            exit 1
+        fi
+        echo "ZKFC format successful. Touching $_ZKFC_FORMATTED..."
+        touch $_ZKFC_FORMATTED
+    fi
+elif [[ "$MY_POD" = "$NAMENODE_POD_1" ]]; then
+    echo "Running on NameNode Pod 1."
+    if [[ ! -d $_METADATA_DIR ]]; then
+        echo "Bootstrapping Standby NameNode on Pod 1..."
+        hdfs namenode -bootstrapStandby -nonInteractive ||  
+            (echo "Standby NameNode bootstrap failed, removing metadata directory..."; rm -rf $_METADATA_DIR; exit 1)
+    fi
+fi
+echo "Starting Zookeeper Failover Controller..."
+hadoop-daemon.sh start zkfc
+echo "Starting NameNode..."
+hdfs namenode`,
+		},
+	}
+
+	if err := ctrl.SetControllerReference(hdfsCluster, configMapTemplate, r.Scheme); err != nil {
+		return configMapTemplate, err
+	}
+
+	return configMapTemplate, nil
+}
+
 func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster) error {
 	// Define the desired NameNode Service object
 	desiredService, _ := r.desiredNameNodeService(hdfsCluster)
 	// Define the desired NameNode StatefulSet object
-	desiredStatefulSet, _ := r.desiredNameNodeStatefulSet(hdfsCluster)
+
+	desiredStatefulSet := &appsv1.StatefulSet{}
+	if hdfsCluster.Spec.NameNode.Replicas == "1" {
+		desiredStatefulSet, _ = r.desiredSingleNameNodeStatefulSet(hdfsCluster)
+	} else {
+		desiredStatefulSet, _ = r.desiredHANameNodeStatefulSet(hdfsCluster)
+		desiredConfigMap, _ := r.desiredHANameNodeConfigMap(hdfsCluster)
+		// Check if the configmap already exists
+		existingConfigMap := &corev1.ConfigMap{}
+		err := r.Get(ctx, client.ObjectKeyFromObject(desiredConfigMap), existingConfigMap)
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+
+		// Create or update the ConfigMap
+		if errors.IsNotFound(err) {
+			if err := r.Create(ctx, desiredConfigMap); err != nil {
+				return err
+			}
+		}
+	}
 
 	// Check if the Service already exists
 	existingService := &corev1.Service{}
@@ -47,6 +135,7 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 
 	// Create or update the StatefulSet
 	if errors.IsNotFound(err) {
+		fmt.Print("creating sts nn")
 		if err := r.Create(ctx, desiredStatefulSet); err != nil {
 			return err
 		}
@@ -81,6 +170,7 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		//	}
 		//}
 	} else {
+		fmt.Print("updating sts nn")
 		existingStatefulSet.Spec = desiredStatefulSet.Spec
 		if err := r.Update(ctx, existingStatefulSet); err != nil {
 			return err
@@ -89,14 +179,6 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 
 	return nil
 }
-
-//func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *hdfsv1.HDFSCluster) *corev1.Service {
-//	// Define your desired NameNode Service object here
-//}
-//
-//func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *hdfsv1.HDFSCluster) *appsv1.StatefulSet {
-//	// Define your desired NameNode StatefulSet object here
-//}
 
 func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.Service, error) {
 	svcTemplate := &corev1.Service{
@@ -138,7 +220,7 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 	return svcTemplate, nil
 }
 
-func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
+func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
 	stsTempalte := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-namenode",
@@ -229,6 +311,184 @@ func (r *HDFSClusterReconciler) desiredNameNodeStatefulSet(hdfsCluster *v1alpha1
 										{
 											Key:  "core-site.xml",
 											Path: "core-site.xml",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: hdfsCluster.Name + "-namenode",
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{
+							corev1.ReadWriteOnce,
+						},
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceStorage: resource.MustParse(hdfsCluster.Spec.NameNode.Resources.Storage),
+							},
+						},
+						//Selector: &metav1.LabelSelector{
+						//	MatchLabels: map[string]string{
+						//		"cluster":   hdfsCluster.Name,
+						//		"app":       "hdfsCluster",
+						//		"component": "datanode",
+						//	},
+						//},
+					},
+				},
+			},
+		},
+	}
+
+	if err := ctrl.SetControllerReference(hdfsCluster, stsTempalte, r.Scheme); err != nil {
+		return stsTempalte, err
+	}
+
+	return stsTempalte, nil
+}
+
+func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
+	stsTempalte := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hdfsCluster.Name + "-namenode",
+			Namespace: hdfsCluster.Namespace,
+			Labels: map[string]string{
+				"cluster":   hdfsCluster.Name,
+				"app":       "hdfsCluster",
+				"component": "namenode",
+			},
+		},
+		Spec: appsv1.StatefulSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"cluster":   hdfsCluster.Name,
+					"app":       "hdfsCluster",
+					"component": "namenode",
+				},
+			},
+			ServiceName: hdfsCluster.Name + "-namenode",
+			Replicas:    stringToInt32(hdfsCluster.Spec.NameNode.Replicas),
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"cluster":   hdfsCluster.Name,
+						"app":       "hdfsCluster",
+						"component": "namenode",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "hdfs-namenode",
+							Image: "amiralh4/namenode:3.3.1",
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "default",
+									ContainerPort: 9000,
+								},
+								{
+									Name:          "web",
+									ContainerPort: 9870,
+								},
+							},
+							Command: []string{
+								"/bin/bash",
+								"-c",
+								"/scripts/start-namenode-ha.sh",
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "MY_POD",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name:  "NAMENODE_POD_0",
+									Value: hdfsCluster.Name + "-namenode-0",
+								},
+								{
+									Name:  "NAMENODE_POD_1",
+									Value: hdfsCluster.Name + "-namenode-1",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "hdfs-site",
+									MountPath: "/opt/hadoop/etc/hadoop/hdfs-site.xml",
+									SubPath:   "hdfs-site.xml",
+								},
+								{
+									Name:      "core-site",
+									MountPath: "/opt/hadoop/etc/hadoop/core-site.xml",
+									SubPath:   "core-site.xml",
+								},
+								{
+									Name:      "ha-namenode-script",
+									MountPath: "/scripts/start-namenode-ha.sh",
+									SubPath:   "start-namenode-ha.sh",
+								},
+								{
+									Name:      hdfsCluster.Name + "-namenode",
+									MountPath: "/data/hadoop/namenode",
+								},
+							},
+						},
+					},
+					RestartPolicy: corev1.RestartPolicyAlways,
+					Volumes: []corev1.Volume{
+						{
+							Name: "hdfs-site",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: hdfsCluster.Name + "-cluster-config",
+									},
+									Items: []corev1.KeyToPath{
+										{
+											Key:  "hdfs-site.xml",
+											Path: "hdfs-site.xml",
+										},
+									},
+								},
+							},
+						},
+						{
+							Name: "core-site",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: hdfsCluster.Name + "-cluster-config",
+									},
+									Items: []corev1.KeyToPath{
+										{
+											Key:  "core-site.xml",
+											Path: "core-site.xml",
+										},
+									},
+								},
+							},
+						},
+						{
+							Name: "ha-namenode-script",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									DefaultMode: int32Ptr(0755),
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: hdfsCluster.Name + "-ha-namenode-script",
+									},
+									Items: []corev1.KeyToPath{
+										{
+											Key:  "start-namenode-ha.sh",
+											Path: "start-namenode-ha.sh",
 										},
 									},
 								},
