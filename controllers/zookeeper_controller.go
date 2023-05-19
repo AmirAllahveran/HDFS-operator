@@ -180,7 +180,9 @@ func (r *HDFSClusterReconciler) createOrUpdateZookeeper(ctx context.Context, hdf
 			return err
 		}
 	} else {
-		existingStatefulSet.Spec = desiredZookeeperStatefulSet.Spec
+		existingStatefulSet.Spec.Replicas = desiredZookeeperStatefulSet.Spec.Replicas
+		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredZookeeperStatefulSet.Spec.Template.Spec.Containers[0].Resources
+		existingStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests = desiredZookeeperStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests
 		if err := r.Update(ctx, existingStatefulSet); err != nil {
 			return err
 		}

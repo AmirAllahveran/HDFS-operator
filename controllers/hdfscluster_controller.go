@@ -109,6 +109,18 @@ func (r *HDFSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hdfs *hdfsv1alpha1.HDFSCluster, logger logr.Logger) error {
+	if hdfs.Spec.NameNode.Replicas == "2" {
+		logger.Info("createOrUpdateJournalNode", "name", hdfs.Name)
+		err := r.createOrUpdateJournalNode(ctx, hdfs)
+		if err != nil {
+			return err
+		}
+		logger.Info("createOrUpdateZookeeper", "name", hdfs.Name)
+		err = r.createOrUpdateZookeeper(ctx, hdfs)
+		if err != nil {
+			return err
+		}
+	}
 	logger.Info("createOrUpdateConfigmap", "name", hdfs.Name)
 	err := r.createOrUpdateConfigmap(ctx, hdfs)
 	if err != nil {
@@ -128,19 +140,6 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 	err = r.createHadoop(ctx, hdfs)
 	if err != nil {
 		return err
-	}
-
-	if hdfs.Spec.NameNode.Replicas == "2" {
-		logger.Info("createOrUpdateJournalNode", "name", hdfs.Name)
-		err = r.createOrUpdateJournalNode(ctx, hdfs)
-		if err != nil {
-			return err
-		}
-		logger.Info("createOrUpdateZookeeper", "name", hdfs.Name)
-		err = r.createOrUpdateZookeeper(ctx, hdfs)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil

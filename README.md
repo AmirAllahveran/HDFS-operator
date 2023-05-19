@@ -92,3 +92,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
+### Commands to create project
+```bash
+kubebuilder init --domain aut.tech --repo github.com/AmirAllahveran/HDFS-operator --owner AmirAllahveran --project-name hdfs-operator
+kubebuilder create api --group hdfs --version v1alpha1 --kind HDFSCluster
+kubebuilder create webhook --group hdfs --version v1alpha1 --kind HDFSCluster --defaulting --programmatic-validation
+```
+
+

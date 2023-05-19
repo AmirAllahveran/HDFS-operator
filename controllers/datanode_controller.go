@@ -345,7 +345,9 @@ func (r *HDFSClusterReconciler) createOrUpdateDataNode(ctx context.Context, hdfs
 		//	}
 		//}
 	} else {
-		existingStatefulSet.Spec = desiredDataNodeStatefulSet.Spec
+		existingStatefulSet.Spec.Replicas = desiredDataNodeStatefulSet.Spec.Replicas
+		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredDataNodeStatefulSet.Spec.Template.Spec.Containers[0].Resources
+		existingStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests = desiredDataNodeStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests
 		if err := r.Update(ctx, existingStatefulSet); err != nil {
 			return err
 		}

@@ -132,7 +132,9 @@ func (r *HDFSClusterReconciler) createOrUpdateJournalNode(ctx context.Context, h
 			return err
 		}
 	} else {
-		existingStatefulSet.Spec = desiredJournalNodeStatefulSet.Spec
+		existingStatefulSet.Spec.Replicas = desiredJournalNodeStatefulSet.Spec.Replicas
+		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredJournalNodeStatefulSet.Spec.Template.Spec.Containers[0].Resources
+		existingStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests = desiredJournalNodeStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests
 		if err := r.Update(ctx, existingStatefulSet); err != nil {
 			return err
 		}

@@ -168,7 +168,9 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		//	}
 		//}
 	} else {
-		existingStatefulSet.Spec = desiredStatefulSet.Spec
+		existingStatefulSet.Spec.Replicas = desiredStatefulSet.Spec.Replicas
+		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredStatefulSet.Spec.Template.Spec.Containers[0].Resources
+		existingStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests = desiredStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests
 		if err := r.Update(ctx, existingStatefulSet); err != nil {
 			return err
 		}

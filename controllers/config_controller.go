@@ -10,8 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"time"
 )
 
 func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
@@ -257,23 +255,23 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		if err := r.Create(ctx, desiredConfigMap); err != nil {
 			return err
 		}
-		hdfs.Status.CreationTime = time.Now().String()
-		errStatus := r.Status().Update(ctx, hdfs)
-		if errStatus != nil {
-			return errStatus
-		}
+		//hdfs.Status.CreationTime = time.Now().String()
+		//errStatus := r.Status().Update(ctx, hdfs)
+		//if errStatus != nil {
+		//	return errStatus
+		//}
 	} else {
-		dataNodeReplica, _ := strconv.ParseInt(hdfs.Spec.DataNode.Replicas, 10, 32)
-		err = r.scaleStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace, 0)
-		err = r.scaleStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace, 0)
-		err = r.scaleDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace, 0)
+		//dataNodeReplica, _ := strconv.ParseInt(hdfs.Spec.DataNode.Replicas, 10, 32)
+		//err = r.scaleStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace, 0)
+		//err = r.scaleStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace, 0)
+		//err = r.scaleDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace, 0)
 		existingConfigMap.Data = desiredConfigMap.Data
-		if err := r.Update(ctx, existingConfigMap); err != nil {
-			return err
-		}
-		err = r.scaleDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace, 1)
-		err = r.scaleStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace, 1)
-		err = r.scaleStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace, int32(dataNodeReplica))
+		//if err := r.Update(ctx, existingConfigMap); err != nil {
+		//	return err
+		//}
+		//err = r.scaleDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace, 1)
+		//err = r.scaleStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace, 1)
+		//err = r.scaleStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace, int32(dataNodeReplica))
 	}
 
 	return nil
