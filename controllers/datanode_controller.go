@@ -101,28 +101,32 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 									ContainerPort: 9864,
 								},
 							},
-							//LivenessProbe: &corev1.Probe{
-							//	ProbeHandler: corev1.ProbeHandler{
-							//		Exec: &corev1.ExecAction{
-							//			Command: []string{
-							//				"/scripts/check-status.sh",
-							//			},
-							//		},
-							//	},
-							//	InitialDelaySeconds: 60,
-							//	PeriodSeconds:       30,
-							//},
-							//ReadinessProbe: &corev1.Probe{
-							//	ProbeHandler: corev1.ProbeHandler{
-							//		Exec: &corev1.ExecAction{
-							//			Command: []string{
-							//				"/scripts/check-status.sh",
-							//			},
-							//		},
-							//	},
-							//	InitialDelaySeconds: 60,
-							//	PeriodSeconds:       30,
-							//},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{
+											"/bin/bash",
+											"-c",
+											"/scripts/check-status.sh",
+										},
+									},
+								},
+								InitialDelaySeconds: 60,
+								PeriodSeconds:       30,
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{
+											"/bin/sh",
+											"-c",
+											"/scripts/check-status.sh",
+										},
+									},
+								},
+								InitialDelaySeconds: 60,
+								PeriodSeconds:       30,
+							},
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: func() *bool { b := true; return &b }(),
 							},
@@ -140,11 +144,11 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 									MountPath: "/opt/hadoop/etc/hadoop/core-site.xml",
 									SubPath:   "core-site.xml",
 								},
-								//{
-								//	Name:      "datanode-script",
-								//	MountPath: "/scripts/check-status.sh",
-								//	SubPath:   "check-status.sh",
-								//},
+								{
+									Name:      "datanode-script",
+									MountPath: "/scripts/check-status.sh",
+									SubPath:   "check-status.sh",
+								},
 								{
 									Name:      hdfsCluster.Name + "-datanode",
 									MountPath: "/data/hadoop/datanode",
@@ -186,22 +190,22 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 								},
 							},
 						},
-						//{
-						//	Name: "datanode-script",
-						//	VolumeSource: corev1.VolumeSource{
-						//		ConfigMap: &corev1.ConfigMapVolumeSource{
-						//			LocalObjectReference: corev1.LocalObjectReference{
-						//				Name: hdfsCluster.Name + "-datanode-script",
-						//			},
-						//			Items: []corev1.KeyToPath{
-						//				{
-						//					Key:  "check-status.sh",
-						//					Path: "check-status.sh",
-						//				},
-						//			},
-						//		},
-						//	},
-						//},
+						{
+							Name: "datanode-script",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: hdfsCluster.Name + "-datanode-script",
+									},
+									Items: []corev1.KeyToPath{
+										{
+											Key:  "check-status.sh",
+											Path: "check-status.sh",
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
