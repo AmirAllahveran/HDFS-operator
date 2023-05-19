@@ -159,11 +159,11 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 									Protocol:      corev1.ProtocolTCP,
 								},
 							},
-							//SecurityContext: &corev1.SecurityContext{
-							//	AllowPrivilegeEscalation: func() *bool { b := false; return &b }(),
-							//	RunAsNonRoot:             func() *bool { b := true; return &b }(),
-							//	RunAsUser:                int64Ptr(int64(1001)),
-							//},
+							SecurityContext: &corev1.SecurityContext{
+								AllowPrivilegeEscalation: func() *bool { b := false; return &b }(),
+								RunAsNonRoot:             func() *bool { b := true; return &b }(),
+								RunAsUser:                int64Ptr(int64(1001)),
+							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "BITNAMI_DEBUG",
@@ -173,7 +173,8 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 									Name:  "ZOO_DATA_LOG_DIR",
 									Value: "",
 								},
-								{Name: "ZOO_PORT_NUMBER",
+								{
+									Name:  "ZOO_PORT_NUMBER",
 									Value: "2181",
 								},
 								{
@@ -198,7 +199,7 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 								},
 								{
 									Name:  "ZOO_MAX_CLIENT_CNXNS",
-									Value: "60",
+									Value: "10000",
 								},
 								{
 									Name:  "ZOO_4LW_COMMANDS_WHITELIST",
@@ -297,9 +298,9 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 							},
 						},
 					},
-					//SecurityContext: &corev1.PodSecurityContext{
-					//	FSGroup: int64Ptr(int64(1001)),
-					//},
+					SecurityContext: &corev1.PodSecurityContext{
+						FSGroup: int64Ptr(int64(1001)),
+					},
 					RestartPolicy: corev1.RestartPolicyAlways,
 					Volumes: []corev1.Volume{{
 						Name: "zookeeper-script",

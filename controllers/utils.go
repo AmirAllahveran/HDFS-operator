@@ -16,7 +16,7 @@ func stringToInt32(s string) *int32 {
 
 func int32Ptr(i int32) *int32 { return &i }
 
-//func int64Ptr(i int64) *int64 { return &i }
+func int64Ptr(i int64) *int64 { return &i }
 
 func (r *HDFSClusterReconciler) scaleStatefulSet(ctx context.Context, name, namespace string, replicas int32) error {
 	existingStatefulSet := &appsv1.StatefulSet{}
