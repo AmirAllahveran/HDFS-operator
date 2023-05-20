@@ -39,15 +39,15 @@ set -o xtrace
 #!/bin/bash
 _METADATA_DIR=$NAMENODE_DIR/current
 
-if [[ "$POD_NAME" = "$NAMENODE_POD_0" ]]; then
+if [ "$POD_NAME" = "$NAMENODE_POD_0" ]; then
     echo "Running on NameNode Pod 0."
-    if [[ ! -d $_METADATA_DIR ]]; then
+    if [ ! -d "$NAMENODE_DIR/current" ]; then
         echo "Formatting NameNode on Pod 0..."
         hdfs namenode -format -nonInteractive hdfs-k8s ||
-            (echo "NameNode format failed, removing metadata directory..." ; rm -rf $_METADATA_DIR; exit 1)
+            (echo "NameNode format failed, removing metadata directory..." ; rm -rf $NAMENODE_DIR/current; exit 1)
     fi
     _ZKFC_FORMATTED=$NAMENODE_DIR/current/.hdfs-k8s-zkfc-formatted
-    if [[ ! -f $_ZKFC_FORMATTED ]]; then
+    if [ ! -f "$NAMENODE_DIR/current/.hdfs-k8s-zkfc-formatted" ]; then
         echo "Formatting Zookeeper Failover Controller..."
         _OUT=$(hdfs zkfc -formatZK -nonInteractive 2>&1)
         # zkfc masks fatal exceptions and returns exit code 0
@@ -58,16 +58,18 @@ if [[ "$POD_NAME" = "$NAMENODE_POD_0" ]]; then
         echo "ZKFC format successful. Touching $_ZKFC_FORMATTED..."
         touch $_ZKFC_FORMATTED
     fi
-elif [[ "$POD_NAME" = "$NAMENODE_POD_1" ]]; then
+elif [ "$POD_NAME" = "$NAMENODE_POD_1" ]; then
     echo "Running on NameNode Pod 1."
-    if [[ ! -d $_METADATA_DIR ]]; then
+    if [ ! -d "$NAMENODE_DIR/current" ]; then
         echo "Bootstrapping Standby NameNode on Pod 1..."
         hdfs namenode -bootstrapStandby -nonInteractive ||  
-            (echo "Standby NameNode bootstrap failed, removing metadata directory..."; rm -rf $_METADATA_DIR; exit 1)
+            (echo "Standby NameNode bootstrap failed, removing metadata directory..."; rm -rf $NAMENODE_DIR/current; exit 1)
+	else
+		ls -lah $NAMENODE_DIR/current
     fi
 fi
-echo "Starting Zookeeper Failover Controller..."
-hadoop-daemon.sh start zkfc
+echo "Starting Zookeeper Fail over Controller..."
+hdfs --daemon start zkfc
 echo "Starting NameNode..."
 hdfs namenode`,
 		},
