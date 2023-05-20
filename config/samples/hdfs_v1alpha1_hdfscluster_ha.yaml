@@ -21,10 +21,10 @@ spec:
     resources:
       storage: 10Gi
   journalNode:
-    replicas: "1"
+    replicas: "3"
     resources:
       storage: 3Gi
   zookeeper:
-    replicas: "1"
+    replicas: "3"
     resources:
       storage: 3Gi

@@ -128,7 +128,7 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 				},
 			},
 			ServiceName: hdfsCluster.Name + "-zookeeper",
-			Replicas:    stringToInt32(hdfsCluster.Spec.JournalNode.Replicas),
+			Replicas:    stringToInt32(hdfsCluster.Spec.Zookeeper.Replicas),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
