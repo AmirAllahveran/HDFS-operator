@@ -322,6 +322,16 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: hdfsCluster.Name + "-namenode",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         "hdfs.aut.tech/v1alpha1",
+								BlockOwnerDeletion: func() *bool { b := true; return &b }(),
+								Controller:         func() *bool { b := true; return &b }(),
+								Kind:               "HDFSCluster",
+								Name:               hdfsCluster.Name,
+								UID:                hdfsCluster.UID,
+							},
+						},
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
 						AccessModes: []corev1.PersistentVolumeAccessMode{
