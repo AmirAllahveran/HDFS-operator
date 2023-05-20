@@ -160,11 +160,11 @@ func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster, customHdfsSite string) 
     <value>` + hdfsCluster.Name + "-namenode-1." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local" + `:9000</value>
   </property>
   <property>
-    <name>dfs.namenode.http-address.hdfs-k8s.nn1</name>
+    <name>dfs.namenode.http-address.hdfs-k8s.nn0</name>
     <value>` + hdfsCluster.Name + "-namenode-0." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local" + `:9870</value>
   </property>
   <property>
-    <name>dfs.namenode.http-address.hdfs-k8s.nn2</name>
+    <name>dfs.namenode.http-address.hdfs-k8s.nn1</name>
     <value>` + hdfsCluster.Name + "-namenode-1." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local" + `:9870</value>
   </property>
   <property>
