@@ -132,6 +132,19 @@ func (r *HDFSClusterReconciler) createOrUpdateJournalNode(ctx context.Context, h
 			return err
 		}
 	} else {
+		if *desiredJournalNodeStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
+			for i := *desiredJournalNodeStatefulSet.Spec.Replicas; i < *existingStatefulSet.Spec.Replicas; i++ {
+				pvc := &corev1.PersistentVolumeClaim{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      hdfs.Name + "-journalnode-" + hdfs.Name + "-journalnode-" + strconv.Itoa(int(i)),
+						Namespace: hdfs.Namespace,
+					},
+				}
+				if err := r.Delete(ctx, pvc); err != nil {
+					return err
+				}
+			}
+		}
 		existingStatefulSet.Spec.Replicas = desiredJournalNodeStatefulSet.Spec.Replicas
 		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredJournalNodeStatefulSet.Spec.Template.Spec.Containers[0].Resources
 		existingStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests = desiredJournalNodeStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests

@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 // DesiredDataNodeConfigMap
@@ -355,6 +356,19 @@ func (r *HDFSClusterReconciler) createOrUpdateDataNode(ctx context.Context, hdfs
 		//	}
 		//}
 	} else {
+		if *desiredDataNodeStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
+			for i := *desiredDataNodeStatefulSet.Spec.Replicas; i < *existingStatefulSet.Spec.Replicas; i++ {
+				pvc := &corev1.PersistentVolumeClaim{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      hdfs.Name + "-datanode-" + hdfs.Name + "-datanode-" + strconv.Itoa(int(i)),
+						Namespace: hdfs.Namespace,
+					},
+				}
+				if err := r.Delete(ctx, pvc); err != nil {
+					return err
+				}
+			}
+		}
 		existingStatefulSet.Spec.Replicas = desiredDataNodeStatefulSet.Spec.Replicas
 		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredDataNodeStatefulSet.Spec.Template.Spec.Containers[0].Resources
 		existingStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests = desiredDataNodeStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests

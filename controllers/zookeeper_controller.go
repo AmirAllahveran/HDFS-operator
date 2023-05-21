@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 func (r *HDFSClusterReconciler) desiredZookeeperConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
@@ -400,6 +401,19 @@ func (r *HDFSClusterReconciler) createOrUpdateZookeeper(ctx context.Context, hdf
 			return err
 		}
 	} else {
+		if *desiredZookeeperStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
+			for i := *desiredZookeeperStatefulSet.Spec.Replicas; i < *existingStatefulSet.Spec.Replicas; i++ {
+				pvc := &corev1.PersistentVolumeClaim{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      hdfs.Name + "-zookeeper-" + hdfs.Name + "-zookeeper-" + strconv.Itoa(int(i)),
+						Namespace: hdfs.Namespace,
+					},
+				}
+				if err := r.Delete(ctx, pvc); err != nil {
+					return err
+				}
+			}
+		}
 		existingStatefulSet.Spec.Replicas = desiredZookeeperStatefulSet.Spec.Replicas
 		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredZookeeperStatefulSet.Spec.Template.Spec.Containers[0].Resources
 		existingStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests = desiredZookeeperStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests

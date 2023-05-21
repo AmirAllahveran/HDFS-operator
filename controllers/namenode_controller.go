@@ -170,6 +170,17 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		//	}
 		//}
 	} else {
+		if *desiredStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
+			pvc := &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      hdfsCluster.Name + "-namenode-" + hdfsCluster.Name + "-namenode-1",
+					Namespace: hdfsCluster.Namespace,
+				},
+			}
+			if err := r.Delete(ctx, pvc); err != nil {
+				return err
+			}
+		}
 		existingStatefulSet.Spec.Replicas = desiredStatefulSet.Spec.Replicas
 		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredStatefulSet.Spec.Template.Spec.Containers[0].Resources
 		existingStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests = desiredStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests
