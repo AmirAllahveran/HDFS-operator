@@ -82,3 +82,127 @@ func TestHDFSClusterReconciler_desiredZookeeperService(t *testing.T) {
 	}
 	assert.Equal(t, expectedPorts, svc.Spec.Ports)
 }
+
+func TestHDFSClusterReconciler_desiredZookeeperConfigMap(t *testing.T) {
+	// Set up a fake client to mock API calls
+	s := runtime.NewScheme()
+	_ = corev1.AddToScheme(s)
+	//_ = appsv1.AddToScheme(s)
+	_ = v1alpha1.AddToScheme(s) // Add your custom resource to the scheme
+
+	// Initialize a mock HDFSCluster
+	hdfsCluster := &v1alpha1.HDFSCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-cluster",
+			Namespace: "test-namespace",
+		},
+		Spec: v1alpha1.HDFSClusterSpec{
+			NameNode: v1alpha1.NameNode{
+				Replicas: "2",
+				Resources: v1alpha1.Resources{
+					Storage: "1Gi",
+				},
+			},
+			JournalNode: v1alpha1.JournalNode{
+				Replicas: "1",
+				Resources: v1alpha1.Resources{
+					Storage: "1Gi",
+				},
+			},
+			Zookeeper: v1alpha1.Zookeeper{
+				Replicas: "1",
+				Resources: v1alpha1.Resources{
+					Storage: "3Gi",
+				},
+			},
+		},
+	}
+
+	// Create a Reconciler instance with the fake client
+	r := &HDFSClusterReconciler{
+		Client: fake.NewClientBuilder().WithScheme(s).WithObjects(hdfsCluster).Build(),
+		Scheme: s,
+	}
+
+	// Executing the function to test
+	configMap, err := r.desiredZookeeperConfigMap(hdfsCluster)
+
+	// Assert that there's no error
+	assert.Nil(t, err)
+
+	// Assert that returned ConfigMap is not nil
+	assert.NotNil(t, configMap)
+
+	// Assert that the ConfigMap metadata is correctly set
+	assert.Equal(t, "test-cluster-zookeeper-script", configMap.ObjectMeta.Name)
+	assert.Equal(t, "test-namespace", configMap.ObjectMeta.Namespace)
+	assert.Equal(t, hdfsCluster.Name, configMap.ObjectMeta.Labels["cluster"])
+	assert.Equal(t, "hdfsCluster", configMap.ObjectMeta.Labels["app"])
+	assert.Equal(t, "zookeeper", configMap.ObjectMeta.Labels["component"])
+
+	// Assert that the Data in ConfigMap is as expected
+	assert.Equal(t, "#!/bin/bash", configMap.Data["init-certs.sh"])
+	_, setupPresent := configMap.Data["setup.sh"]
+	assert.True(t, setupPresent, "setup.sh script should be present in the ConfigMap data")
+
+	// Assert that the owner reference is set correctly
+	assert.Equal(t, 1, len(configMap.OwnerReferences))
+	assert.Equal(t, hdfsCluster.Name, configMap.OwnerReferences[0].Name)
+}
+
+func TestHDFSClusterReconciler_desiredZookeeperStatefulSet(t *testing.T) {
+	// Set up a fake client to mock API calls
+	s := runtime.NewScheme()
+	_ = corev1.AddToScheme(s)
+	//_ = appsv1.AddToScheme(s)
+	_ = v1alpha1.AddToScheme(s) // Add your custom resource to the scheme
+
+	// Initialize a mock HDFSCluster
+	hdfsCluster := &v1alpha1.HDFSCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-cluster",
+			Namespace: "test-namespace",
+		},
+		Spec: v1alpha1.HDFSClusterSpec{
+			NameNode: v1alpha1.NameNode{
+				Replicas: "2",
+				Resources: v1alpha1.Resources{
+					Storage: "1Gi",
+				},
+			},
+			JournalNode: v1alpha1.JournalNode{
+				Replicas: "1",
+				Resources: v1alpha1.Resources{
+					Storage: "1Gi",
+				},
+			},
+			Zookeeper: v1alpha1.Zookeeper{
+				Replicas: "3",
+				Resources: v1alpha1.Resources{
+					Storage: "3Gi",
+				},
+			},
+		},
+	}
+
+	// Create a Reconciler instance with the fake client
+	r := &HDFSClusterReconciler{
+		Client: fake.NewClientBuilder().WithScheme(s).WithObjects(hdfsCluster).Build(),
+		Scheme: s,
+	}
+	t.Run("valid cluster definition", func(t *testing.T) {
+		statefulSet, err := r.desiredZookeeperStatefulSet(hdfsCluster)
+		assert.NoError(t, err)
+
+		// Verify the returned stateful set has the expected properties.
+		assert.Equal(t, "test-cluster-zookeeper", statefulSet.Name)
+		assert.Equal(t, "test-namespace", statefulSet.Namespace)
+		assert.Equal(t, int32(3), *statefulSet.Spec.Replicas)
+
+		// Verify ControllerReference
+		ownerRefs := statefulSet.OwnerReferences
+		assert.NotEmpty(t, ownerRefs)
+		assert.Equal(t, "HDFSCluster", ownerRefs[0].Kind)
+		assert.Equal(t, "test-cluster", ownerRefs[0].Name)
+	})
+}
