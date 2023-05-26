@@ -233,6 +233,14 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 }
 
 func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
+
+	var namenodeDataDir string
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.data.dir"]; ok {
+		namenodeDataDir = val
+	} else {
+		namenodeDataDir = "/data/hadoop/namenode"
+	}
+
 	stsTempalte := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-namenode",
@@ -276,6 +284,21 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 									ContainerPort: 9870,
 								},
 							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "NAMENODE_DIR",
+									Value: namenodeDataDir,
+								},
+							},
+							Lifecycle: &corev1.Lifecycle{
+								PostStart: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"/bin/sh",
+											"-c",
+											"if [ ! -d \"$NAMENODE_DIR\" ]; then mkdir -p $NAMENODE_DIR; chown -R root:root $NAMENODE_DIR; chmod 755 $NAMENODE_DIR; fi"},
+									},
+								},
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "hdfs-site",
@@ -289,7 +312,7 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 								},
 								{
 									Name:      hdfsCluster.Name + "-namenode",
-									MountPath: "/data/hadoop/namenode",
+									MountPath: namenodeDataDir,
 								},
 							},
 						},
@@ -376,6 +399,12 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 }
 
 func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
+	var namenodeDataDir string
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.data.dir"]; ok {
+		namenodeDataDir = val
+	} else {
+		namenodeDataDir = "/data/hadoop/namenode"
+	}
 	stsTempalte := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-namenode",
@@ -441,6 +470,19 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 									Name:  "NAMENODE_POD_1",
 									Value: hdfsCluster.Name + "-namenode-1",
 								},
+								{
+									Name:  "NAMENODE_DIR",
+									Value: namenodeDataDir,
+								},
+							},
+							Lifecycle: &corev1.Lifecycle{
+								PostStart: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"/bin/sh",
+											"-c",
+											"if [ ! -d \"$NAMENODE_DIR\" ]; then mkdir -p $NAMENODE_DIR; chown -R root:root $NAMENODE_DIR; chmod 755 $NAMENODE_DIR; fi"},
+									},
+								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -460,7 +502,7 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 								},
 								{
 									Name:      hdfsCluster.Name + "-namenode",
-									MountPath: "/data/hadoop/namenode",
+									MountPath: namenodeDataDir,
 								},
 							},
 						},

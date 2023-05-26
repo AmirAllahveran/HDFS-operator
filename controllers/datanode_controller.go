@@ -63,6 +63,24 @@ echo $_CLUSTER_ID | grep -q -v null`,
 }
 
 func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
+	//var port int
+	//if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.datanode.http.address"]; ok {
+	//	_, portStr, err := net.SplitHostPort(val)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	port, _ = strconv.Atoi(portStr)
+	//} else {
+	//	port = 9864
+	//}
+
+	var datanodeDataDir string
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.datanode.data.dir"]; ok {
+		datanodeDataDir = val
+	} else {
+		datanodeDataDir = "/data/hadoop/datanode"
+	}
+
 	stsTemplate := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-datanode",
@@ -96,12 +114,12 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 						{
 							Name:  "hdfs-datanode",
 							Image: "amiralh4/datanode:3.3.1",
-							Ports: []corev1.ContainerPort{
-								{
-									Name:          "default",
-									ContainerPort: 9864,
-								},
-							},
+							//Ports: []corev1.ContainerPort{
+							//	{
+							//		Name:          "default",
+							//		ContainerPort: int32(port),
+							//	},
+							//},
 							//LivenessProbe: &corev1.Probe{
 							//	ProbeHandler: corev1.ProbeHandler{
 							//		Exec: &corev1.ExecAction{
@@ -131,6 +149,21 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: func() *bool { b := true; return &b }(),
 							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "DATA_DIR",
+									Value: datanodeDataDir,
+								},
+							},
+							Lifecycle: &corev1.Lifecycle{
+								PostStart: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"/bin/sh",
+											"-c",
+											"if [ ! -d \"$DATA_DIR\" ]; then mkdir -p $DATA_DIR; chown -R root:root $DATA_DIR; chmod 755 $DATA_DIR; fi"},
+									},
+								},
+							},
 							//Command: []string{
 							//	"chmod", "+x", "/scripts/check-status.sh",
 							//},
@@ -152,7 +185,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 								},
 								{
 									Name:      hdfsCluster.Name + "-datanode",
-									MountPath: "/data/hadoop/datanode",
+									MountPath: datanodeDataDir,
 								},
 							},
 						},

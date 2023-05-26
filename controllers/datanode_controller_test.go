@@ -101,7 +101,7 @@ func TestHDFSClusterReconciler_createOrUpdateDataNode(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
-			DataNode: v1alpha1.DataNode{
+			DataNode: v1alpha1.Node{
 				Resources: v1alpha1.Resources{
 					Storage: "10Gi",
 				},
@@ -156,7 +156,7 @@ func TestHDFSClusterReconciler_desiredDataNodeStatefulSet(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
-			DataNode: v1alpha1.DataNode{
+			DataNode: v1alpha1.Node{
 				Replicas: 3,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",

@@ -157,6 +157,14 @@ func (r *HDFSClusterReconciler) createOrUpdateJournalNode(ctx context.Context, h
 }
 
 func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
+
+	var journalnodeDataDir string
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.journalnode.edits.dir"]; ok {
+		journalnodeDataDir = val
+	} else {
+		journalnodeDataDir = "/data/hadoop/journalnode"
+	}
+
 	stsTemplate := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-journalnode",
@@ -200,6 +208,21 @@ func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alp
 									ContainerPort: 8485,
 								},
 							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "JOURNALNODE_DIR",
+									Value: journalnodeDataDir,
+								},
+							},
+							Lifecycle: &corev1.Lifecycle{
+								PostStart: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"/bin/sh",
+											"-c",
+											"if [ ! -d \"$JOURNALNODE_DIR\" ]; then mkdir -p $JOURNALNODE_DIR; chown -R root:root $JOURNALNODE_DIR; chmod 755 $JOURNALNODE_DIR; fi"},
+									},
+								},
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "hdfs-site",
@@ -213,7 +236,7 @@ func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alp
 								},
 								{
 									Name:      hdfsCluster.Name + "-journalnode",
-									MountPath: "/data/hadoop/journalnode",
+									MountPath: journalnodeDataDir,
 								},
 							},
 						},
