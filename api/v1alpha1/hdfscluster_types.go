@@ -25,42 +25,37 @@ import (
 // HDFSClusterSpec defines the desired state of HDFSCluster
 type HDFSClusterSpec struct {
 	ClusterConfig ClusterConfig `json:"clusterConfig"`
-	NameNode      NameNode      `json:"nameNode"`
-	DataNode      DataNode      `json:"dataNode"`
-	JournalNode   JournalNode   `json:"journalNode,omitempty"`
-	Zookeeper     Zookeeper     `json:"zookeeper,omitempty"`
+	NameNode      Node          `json:"nameNode"`
+	DataNode      Node          `json:"dataNode"`
+	JournalNode   Node          `json:"journalNode,omitempty"`
+	Zookeeper     Node          `json:"zookeeper,omitempty"`
 }
 
-type NameNode struct {
+type Node struct {
 	Replicas int `json:"replicas"`
 	// +kubebuilder:validation:Optional
 	Resources Resources `json:"resources"`
 }
 
-type DataNode struct {
-	Replicas int `json:"replicas"`
-	// +kubebuilder:validation:Optional
-	Resources Resources `json:"resources"`
-}
+//type DataNode struct {
+//	Replicas int `json:"replicas"`
+//	// +kubebuilder:validation:Optional
+//	Resources Resources `json:"resources"`
+//}
+//
+//type Zookeeper struct {
+//	Replicas int `json:"replicas"`
+//	// +kubebuilder:validation:Optional
+//	Resources Resources `json:"resources"`
+//}
 
-type Zookeeper struct {
-	Replicas int `json:"replicas"`
-	// +kubebuilder:validation:Optional
-	Resources Resources `json:"resources"`
-}
-
-type JournalNode struct {
-	Replicas int `json:"replicas"`
-	// +kubebuilder:validation:Optional
-	Resources Resources `json:"resources"`
-}
+//type JournalNode struct {
+//	Replicas int `json:"replicas"`
+//	// +kubebuilder:validation:Optional
+//	Resources Resources `json:"resources"`
+//}
 
 type ClusterConfig struct {
-	DfsReplication     int                `json:"dfsReplication"`
-	CustomHadoopConfig CustomHadoopConfig `json:"customHadoopConfig,omitempty"`
-}
-
-type CustomHadoopConfig struct {
 	CoreSite map[string]string `json:"coreSite,omitempty"`
 	HdfsSite map[string]string `json:"hdfsSite,omitempty"`
 }

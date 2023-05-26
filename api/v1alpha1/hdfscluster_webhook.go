@@ -18,7 +18,6 @@ package v1alpha1
 
 import (
 	"errors"
-	"fmt"
 	"k8s.io/apimachinery/pkg/runtime"
 	"regexp"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -43,14 +42,91 @@ var _ webhook.Defaulter = &HDFSCluster{}
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (h *HDFSCluster) Default() {
 	hdfsclusterlog.Info("default", "name", h.Name)
-	if h.Spec.ClusterConfig.DfsReplication == 0 {
-		h.Spec.ClusterConfig.DfsReplication = 1
+	if h.Spec.NameNode.Replicas == 1 {
+		if _, ok := h.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; !ok {
+			h.Spec.ClusterConfig.CoreSite["fs.defaultFS"] = "hdfs://" + h.Name + "-namenode." +
+				h.Namespace + ".svc.cluster.local:8020"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.replication"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.replication"] = "1"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.namenode.datanode.registration.ip-hostname-check"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.namenode.datanode.registration.ip-hostname-check"] = "false"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.namenode.name.dir"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.namenode.name.dir"] = "/data/hadoop/namenode"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.datanode.data.dir"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.datanode.data.dir"] = "/data/hadoop/datanode"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.permissions.enabled"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.permissions.enabled"] = "true"
+		}
+	} else {
+		if _, ok := h.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; !ok {
+			h.Spec.ClusterConfig.CoreSite["fs.defaultFS"] = "hdfs://hdfs-k8s"
+		}
+		if _, ok := h.Spec.ClusterConfig.CoreSite["ha.zookeeper.quorum"]; !ok {
+			zookeeperQuorum := h.Name + "-zookeeper-0." + h.Name + "-zookeeper." + h.Namespace + ".svc.cluster.local:2181"
+			if h.Spec.Zookeeper.Replicas == 3 {
+				zookeeperQuorum = h.Name + "-zookeeper-0." + h.Name + "-zookeeper." + h.Namespace + ".svc.cluster.local:2181," +
+					h.Name + "-zookeeper-1." + h.Name + "-zookeeper." + h.Namespace + ".svc.cluster.local:2181," +
+					h.Name + "-zookeeper-2." + h.Name + "-zookeeper." + h.Namespace + ".svc.cluster.local:2181"
+			}
+			h.Spec.ClusterConfig.CoreSite["ha.zookeeper.quorum"] = zookeeperQuorum
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.nameservices"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.nameservices"] = "hdfs-k8s"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.ha.namenodes.hdfs-k8s"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.ha.namenodes.hdfs-k8s"] = "nn0,nn1"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.namenode.rpc-address.hdfs-k8s.nn0"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.namenode.rpc-address.hdfs-k8s.nn0"] = h.Name + "-namenode-0." + h.Name +
+				"-namenode." + h.Namespace + ".svc.cluster.local:8020"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.namenode.rpc-address.hdfs-k8s.nn1"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.namenode.rpc-address.hdfs-k8s.nn1"] = h.Name + "-namenode-1." + h.Name +
+				"-namenode." + h.Namespace + ".svc.cluster.local:8020"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.namenode.shared.edits.dir"]; !ok {
+			qjournal := h.Name + "-journalnode-0." + h.Name + "-journalnode." + h.Namespace + ".svc.cluster.local:8485"
+			if h.Spec.JournalNode.Replicas == 3 {
+				qjournal = h.Name + "-journalnode-0." + h.Name + "-journalnode." + h.Namespace + ".svc.cluster.local:8485;" +
+					h.Name + "-journalnode-1." + h.Name + "-journalnode." + h.Namespace + ".svc.cluster.local:8485;" +
+					h.Name + "-journalnode-2." + h.Name + "-journalnode." + h.Namespace + ".svc.cluster.local:8485"
+			}
+			h.Spec.ClusterConfig.HdfsSite["dfs.namenode.shared.edits.dir"] = "qjournal://" + qjournal + "/hdfs-k8s"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.client.failover.proxy.provider.hdfs-k8s"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.client.failover.proxy.provider.hdfs-k8s"] = "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.namenode.datanode.registration.ip-hostname-check"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.namenode.datanode.registration.ip-hostname-check"] = "false"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.namenode.name.dir"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.namenode.name.dir"] = "/data/hadoop/namenode"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.datanode.data.dir"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.datanode.data.dir"] = "/data/hadoop/datanode"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.journalnode.edits.dir"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.journalnode.edits.dir"] = "/data/hadoop/journalnode"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.replication"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.replication"] = "1"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.permissions.enabled"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.permissions.enabled"] = "true"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.ha.fencing.methods"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.ha.fencing.methods"] = "shell(/bin/true)"
+		}
+		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.ha.automatic-failover.enabled"]; !ok {
+			h.Spec.ClusterConfig.HdfsSite["dfs.ha.automatic-failover.enabled"] = "true"
+		}
+
 	}
-	//if h.Spec.NameNode.Replicas == 1 {
-	//	if _, ok := h.Spec.ClusterConfig.CustomHadoopConfig.CoreSite[""]; ok {
-	//
-	//	}
-	//}
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -62,71 +138,79 @@ var _ webhook.Validator = &HDFSCluster{}
 func (h *HDFSCluster) ValidateCreate() error {
 	hdfsclusterlog.Info("validate create", "name", h.Name)
 
-	match, err := isNumberMatchesPattern(h.Spec.DataNode.Replicas, "^[123]$")
-	if err != nil {
-		return err
-	}
-	if !match {
-		return errors.New("invalid Datanode Replica count. It should be valid in this regex ^[123]$")
-	}
-
-	match, err = isNumberMatchesPattern(h.Spec.NameNode.Replicas, "^[12]$")
-	if err != nil {
-		return err
-	}
-	if !match {
-		return errors.New("invalid Namenode Replica count. It should be valid in this regex ^[12]$")
-	}
-
-	if h.Spec.NameNode.Replicas == 2 {
-		match, err := isNumberMatchesPattern(h.Spec.Zookeeper.Replicas, "^[13]$")
-		if err != nil {
-			return err
-		}
-		if !match {
-			return errors.New("invalid Zookeeper Replica count. It should be valid in this regex ^[123]$")
-		}
-
-		match, err = isNumberMatchesPattern(h.Spec.JournalNode.Replicas, "^[13]$")
-		if err != nil {
-			return err
-		}
-		if !match {
-			return errors.New("invalid JournalNode Replica count. It should be valid in this regex ^[123]$")
-		}
-	}
-
-	return nil
+	return validateNode(h)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (h *HDFSCluster) ValidateUpdate(old runtime.Object) error {
 	hdfsclusterlog.Info("validate update", "name", h.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
-	return nil
+	return validateNode(h)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (h *HDFSCluster) ValidateDelete() error {
 	hdfsclusterlog.Info("validate delete", "name", h.Name)
 
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }
 
-func isNumberMatchesPattern(num int, pattern string) (bool, error) {
+func isValid(node Node, pattern string) bool {
 	// Convert the number to a string
-	strNum := strconv.Itoa(num)
+	strNum := strconv.Itoa(node.Replicas)
 
 	// Compile the pattern
-	re, err := regexp.Compile(pattern)
-	if err != nil {
-		return false, fmt.Errorf("invalid pattern: %v", err)
-	}
+	re, _ := regexp.Compile(pattern)
 
 	// Match the number against the pattern
 	isMatch := re.MatchString(strNum)
+	isValid := validateResources(&node.Resources)
 
-	return isMatch, nil
+	return isMatch && isValid
+}
+
+func validateNode(h *HDFSCluster) error {
+	match := isValid(h.Spec.DataNode, "^[123]$")
+	if !match {
+		return errors.New("invalid Datanode Replica count. It should be valid in this regex ^[123]$")
+	}
+
+	match = isValid(h.Spec.DataNode, "^[12]$")
+	if !match {
+		return errors.New("invalid Namenode Replica count. It should be valid in this regex ^[12]$")
+	}
+
+	if h.Spec.NameNode.Replicas == 2 {
+		match := isValid(h.Spec.DataNode, "^[13]$")
+		if !match {
+			return errors.New("invalid Zookeeper Replica count. It should be valid in this regex ^[123]$")
+		}
+
+		match = isValid(h.Spec.DataNode, "^[13]$")
+		if !match {
+			return errors.New("invalid JournalNode Replica count. It should be valid in this regex ^[123]$")
+		}
+	}
+	return nil
+}
+
+func validateResources(r *Resources) bool {
+	cpuPattern := `^(\d+(\.\d+)?|\d+m)$`
+	memoryPattern := `^(\d+(Ei|Pi|Ti|Gi|Mi|Ki))$`
+	storagePattern := memoryPattern // Assuming Storage follows the same pattern as Memory.
+
+	cpuRegexp := regexp.MustCompile(cpuPattern)
+	memoryRegexp := regexp.MustCompile(memoryPattern)
+	storageRegexp := regexp.MustCompile(storagePattern)
+
+	if !cpuRegexp.MatchString(r.Cpu) {
+		return false
+	}
+	if !memoryRegexp.MatchString(r.Memory) {
+		return false
+	}
+	if !storageRegexp.MatchString(r.Storage) {
+		return false
+	}
+	return true
 }
