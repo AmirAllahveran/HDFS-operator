@@ -50,8 +50,8 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 	coreSite := make(map[string]string)
 	coreSite["fs.defaultFS"] = "hdfs://" + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:8020"
-	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.CoreSite {
-		coreSite[item.Name] = item.Value
+	for key, val := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.CoreSite {
+		coreSite[key] = val
 	}
 	return mapToXml(coreSite)
 }
@@ -68,8 +68,8 @@ func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	coreSite["fs.defaultFS"] = "hdfs://hdfs-k8s"
 	coreSite["ha.zookeeper.quorum"] = zookeeperQuorum
 
-	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.CoreSite {
-		coreSite[item.Name] = item.Value
+	for key, val := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.CoreSite {
+		coreSite[key] = val
 	}
 	return mapToXml(coreSite)
 }
@@ -81,8 +81,8 @@ func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 	hdfsSite["dfs.datanode.data.dir"] = "/data/hadoop/datanode"
 	hdfsSite["dfs.replication"] = hdfsCluster.Spec.ClusterConfig.DfsReplication
 	hdfsSite["dfs.permissions.enabled"] = "true"
-	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.HdfsSite {
-		hdfsSite[item.Name] = item.Value
+	for key, val := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.HdfsSite {
+		hdfsSite[key] = val
 	}
 	return mapToXml(hdfsSite)
 }
@@ -112,8 +112,8 @@ func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	hdfsSite["dfs.permissions.enabled"] = "true"
 	hdfsSite["dfs.ha.fencing.methods"] = "shell(/bin/true)"
 	hdfsSite["dfs.ha.automatic-failover.enabled"] = "true"
-	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.HdfsSite {
-		hdfsSite[item.Name] = item.Value
+	for key, val := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.HdfsSite {
+		hdfsSite[key] = val
 	}
 	return mapToXml(hdfsSite)
 }
