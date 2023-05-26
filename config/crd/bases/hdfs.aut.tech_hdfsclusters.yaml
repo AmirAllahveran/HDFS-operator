@@ -41,21 +41,14 @@ spec:
             properties:
               clusterConfig:
                 properties:
-                  customHadoopConfig:
-                    properties:
-                      coreSite:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      hdfsSite:
-                        additionalProperties:
-                          type: string
-                        type: object
+                  coreSite:
+                    additionalProperties:
+                      type: string
                     type: object
-                  dfsReplication:
-                    type: integer
-                required:
-                - dfsReplication
+                  hdfsSite:
+                    additionalProperties:
+                      type: string
+                    type: object
                 type: object
               dataNode:
                 properties:
