@@ -49,7 +49,7 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 
 func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 	coreSite := make(map[string]string)
-	coreSite["fs.defaultFS"] = "hdfs://" + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:9000"
+	coreSite["fs.defaultFS"] = "hdfs://" + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:8020"
 	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.CoreSite {
 		coreSite[item.Name] = item.Value
 	}
@@ -99,13 +99,9 @@ func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	hdfsSite["dfs.nameservices"] = "hdfs-k8s"
 	hdfsSite["dfs.ha.namenodes.hdfs-k8s"] = "nn0,nn1"
 	hdfsSite["dfs.namenode.rpc-address.hdfs-k8s.nn0"] = hdfsCluster.Name + "-namenode-0." + hdfsCluster.Name +
-		"-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:9000"
+		"-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:8020"
 	hdfsSite["dfs.namenode.rpc-address.hdfs-k8s.nn1"] = hdfsCluster.Name + "-namenode-1." + hdfsCluster.Name +
-		"-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:9000"
-	hdfsSite["dfs.namenode.http-address.hdfs-k8s.nn0"] = hdfsCluster.Name + "-namenode-0." + hdfsCluster.Name +
-		"-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:9870"
-	hdfsSite["dfs.namenode.http-address.hdfs-k8s.nn1"] = hdfsCluster.Name + "-namenode-1." + hdfsCluster.Name +
-		"-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:9870"
+		"-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:8020"
 	hdfsSite["dfs.namenode.shared.edits.dir"] = "qjournal://" + qjournal + "/hdfs-k8s"
 	hdfsSite["dfs.client.failover.proxy.provider.hdfs-k8s"] = "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider"
 	hdfsSite["dfs.namenode.datanode.registration.ip-hostname-check"] = "false"

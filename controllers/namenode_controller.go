@@ -212,7 +212,7 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 				},
 				{
 					Name:       "default",
-					Port:       9000,
+					Port:       8020,
 					TargetPort: intstr.FromString("default"),
 				},
 			},
@@ -269,7 +269,7 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "default",
-									ContainerPort: 9000,
+									ContainerPort: 8020,
 								},
 								{
 									Name:          "web",
@@ -412,7 +412,7 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "default",
-									ContainerPort: 9000,
+									ContainerPort: 8020,
 								},
 								{
 									Name:          "web",

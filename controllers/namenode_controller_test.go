@@ -67,8 +67,8 @@ func TestHDFSClusterReconciler_desiredNameNodeService(t *testing.T) {
 		},
 		{
 			Name:       "default",
-			Port:       9000,
-			TargetPort: intstr.FromString("9000"),
+			Port:       8020,
+			TargetPort: intstr.FromString("8020"),
 		},
 	}
 	assert.Equal(t, expectedPorts, svc.Spec.Ports)
