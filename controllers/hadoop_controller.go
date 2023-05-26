@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 func (r *HDFSClusterReconciler) desiredHadoopDeployment(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.Deployment, error) {
@@ -122,6 +123,11 @@ func (r *HDFSClusterReconciler) createHadoop(ctx context.Context, hdfs *v1alpha1
 	if errors.IsNotFound(err) {
 		if err := r.Create(ctx, desiredHadoopDeployment); err != nil {
 			return err
+		}
+		hdfs.Status.CreationTime = time.Now().String()
+		errStatus := r.Status().Update(ctx, hdfs)
+		if errStatus != nil {
+			return errStatus
 		}
 	}
 	return nil

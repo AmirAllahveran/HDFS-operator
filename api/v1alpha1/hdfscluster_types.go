@@ -85,9 +85,6 @@ type Resources struct {
 // HDFSClusterStatus defines the observed state of HDFSCluster
 type HDFSClusterStatus struct {
 	CreationTime string `json:"creationTime"`
-	// +kubebuilder:validation:Optional
-	LastUpdated string `json:"lastUpdated,omitempty"`
-	//Report      string `json:"report"`
 }
 
 //+kubebuilder:object:root=true
