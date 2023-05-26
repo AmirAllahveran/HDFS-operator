@@ -8,6 +8,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"strings"
 	"testing"
 )
 
@@ -143,5 +144,21 @@ func TestScaleStatefulSet(t *testing.T) {
 
 	if *updatedSts.Spec.Replicas != desiredReplicas {
 		t.Errorf("Deployment replicas mismatch: expected '%d', got '%d'", desiredReplicas, *updatedSts.Spec.Replicas)
+	}
+}
+
+func TestMapToXml(t *testing.T) {
+	properties := map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+	}
+
+	res := mapToXml(properties)
+	if !strings.Contains(res, "key1") || !strings.Contains(res, "value1") {
+		t.Errorf("Expected 'key1' and 'value1' to be in the result, got %s", res)
+	}
+
+	if !strings.Contains(res, "key2") || !strings.Contains(res, "value2") {
+		t.Errorf("Expected 'key2' and 'value2' to be in the result, got %s", res)
 	}
 }

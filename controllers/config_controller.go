@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	hdfsv1alpha1 "github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
-	"github.com/go-xmlfmt/xmlfmt"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,32 +13,14 @@ import (
 
 func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
 
-	customCoreSite := ""
-	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.CoreSite {
-		property := `  <property>
-	<name>` + item.Name + `</name>
-	<value>` + item.Value + `</value>
-</property>`
-		customCoreSite = customCoreSite + property
-	}
-
-	customHdfsSite := ""
-	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.HdfsSite {
-		property := `  <property>
-	<name>` + item.Name + `</name>
-	<value>` + item.Value + `</value>
-</property>`
-		customHdfsSite = customHdfsSite + property
-	}
-
 	coreSite := ""
 	hdfsSite := ""
 	if hdfsCluster.Spec.NameNode.Replicas == "1" {
-		coreSite = configCoreSiteSingle(hdfsCluster, customCoreSite)
-		hdfsSite = configHdfsSiteSingle(hdfsCluster, customCoreSite)
+		coreSite = configCoreSiteSingle(hdfsCluster)
+		hdfsSite = configHdfsSiteSingle(hdfsCluster)
 	} else {
-		coreSite = configCoreSiteHA(hdfsCluster, customHdfsSite)
-		hdfsSite = configHdfsSiteHA(hdfsCluster, customHdfsSite)
+		coreSite = configCoreSiteHA(hdfsCluster)
+		hdfsSite = configHdfsSiteHA(hdfsCluster)
 	}
 
 	cmTemplate := &corev1.ConfigMap{
@@ -66,153 +47,79 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 	return cmTemplate, nil
 }
 
-func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster, customCoreSite string) string {
-	coreSite := `<property>
-<name>fs.defaultFS</name>
-<value>hdfs://` + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + `.svc.cluster.local:9000</value>
-<description>The default filesystem URI.</description>
-</property>
-<property>
-	<name>io.file.buffer.size</name>
-	<value>131072</value>
-	<description>The size of buffer for use in sequence files.</description>
-</property>` + customCoreSite
-
-	coreSite = xmlfmt.FormatXML(coreSite, "", "  ")
-	return coreSite
+func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
+	coreSite := make(map[string]string)
+	coreSite["fs.defaultFS"] = "hdfs://" + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:9000"
+	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.CoreSite {
+		coreSite[item.Name] = item.Value
+	}
+	return mapToXml(coreSite)
 }
 
-func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster, customCoreSite string) string {
+func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	zookeeperQuorum := hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
 	if hdfsCluster.Spec.Zookeeper.Replicas == "3" {
 		zookeeperQuorum = hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
 			hdfsCluster.Name + "-zookeeper-1." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
 			hdfsCluster.Name + "-zookeeper-2." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
 	}
-	coreSite := `<property>
-    <name>fs.defaultFS</name>
-    <value>hdfs://hdfs-k8s</value>
-  </property>
-  <property>
-    <name>ha.zookeeper.quorum</name>
-    <value>` + zookeeperQuorum + `</value>
-  </property>
-  <property>
-    <name>io.file.buffer.size</name>
-    <value>131072</value>
-    <description>Size of read/write buffer used in SequenceFiles.</description>
-  </property>` + customCoreSite
-	coreSite = xmlfmt.FormatXML(coreSite, "", "  ")
-	return coreSite
+
+	coreSite := make(map[string]string)
+	coreSite["fs.defaultFS"] = "hdfs://hdfs-k8s"
+	coreSite["ha.zookeeper.quorum"] = zookeeperQuorum
+
+	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.CoreSite {
+		coreSite[item.Name] = item.Value
+	}
+	return mapToXml(coreSite)
 }
 
-func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster, customHdfsSite string) string {
-	hdfsSite := `<property>
-	<name>dfs.namenode.datanode.registration.ip-hostname-check</name>
-	<value>false</value>
-	<description>Use IP address instead of hostname for communication between NameNode and DataNodes</description>
-	</property>
-	<property>
-	<name>dfs.namenode.name.dir</name>
-	<value>/data/hadoop/namenode</value>
-	<description>Path on the local filesystem where the NameNode stores the namespace and transaction logs persistently.</description>
-	</property>
-	<property>
-	<name>dfs.datanode.data.dir</name>
-	<value>/data/hadoop/datanode</value>
-	<description>Comma-separated list of paths on the local filesystem of a DataNode where it stores its blocks.</description>
-	</property>
-	<property>
-	<name>dfs.replication</name>
-	<value>` + hdfsCluster.Spec.ClusterConfig.DfsReplication + `</value>
-	<description>Default block replication. The actual number of replications can be specified when the file is created.</description>
-	</property>
-	<property>
-	<name>dfs.permissions.enabled</name>
-	<value>true</value>
-	<description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
-	</property>` + customHdfsSite
-	hdfsSite = xmlfmt.FormatXML(hdfsSite, "", "  ")
-	return hdfsSite
+func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
+	hdfsSite := make(map[string]string)
+	hdfsSite["dfs.namenode.datanode.registration.ip-hostname-check"] = "false"
+	hdfsSite["dfs.namenode.name.dir"] = "/data/hadoop/namenode"
+	hdfsSite["dfs.datanode.data.dir"] = "/data/hadoop/datanode"
+	hdfsSite["dfs.replication"] = hdfsCluster.Spec.ClusterConfig.DfsReplication
+	hdfsSite["dfs.permissions.enabled"] = "true"
+	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.HdfsSite {
+		hdfsSite[item.Name] = item.Value
+	}
+	return mapToXml(hdfsSite)
 }
 
-func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster, customHdfsSite string) string {
+func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	qjournal := hdfsCluster.Name + "-journalnode-0." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485"
 	if hdfsCluster.Spec.JournalNode.Replicas == "3" {
 		qjournal = hdfsCluster.Name + "-journalnode-0." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485;" +
 			hdfsCluster.Name + "-journalnode-1." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485;" +
 			hdfsCluster.Name + "-journalnode-2." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485"
 	}
-	hdfsSite := `<property>
-    <name>dfs.nameservices</name>
-    <value>hdfs-k8s</value>
-  </property>
-  <property>
-    <name>dfs.ha.namenodes.hdfs-k8s</name>
-    <value>nn0,nn1</value>
-  </property>
-  <property>
-    <name>dfs.namenode.rpc-address.hdfs-k8s.nn0</name>
-    <value>` + hdfsCluster.Name + "-namenode-0." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local" + `:9000</value>
-  </property>
-  <property>
-    <name>dfs.namenode.rpc-address.hdfs-k8s.nn1</name>
-    <value>` + hdfsCluster.Name + "-namenode-1." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local" + `:9000</value>
-  </property>
-  <property>
-    <name>dfs.namenode.http-address.hdfs-k8s.nn0</name>
-    <value>` + hdfsCluster.Name + "-namenode-0." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local" + `:9870</value>
-  </property>
-  <property>
-    <name>dfs.namenode.http-address.hdfs-k8s.nn1</name>
-    <value>` + hdfsCluster.Name + "-namenode-1." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local" + `:9870</value>
-  </property>
-  <property>
-    <name>dfs.namenode.shared.edits.dir</name>
-    <value>qjournal://` + qjournal + `/hdfs-k8s</value>
-  </property>
-  <property>
-    <name>dfs.client.failover.proxy.provider.hdfs-k8s</name>
-    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
-  </property>
-  <property>
-    <name>dfs.ha.automatic-failover.enabled</name>
-    <value>true</value>
-  </property>
-  <property>
-    <name>dfs.journalnode.edits.dir</name>
-    <value>/data/hadoop/journalnode</value>
-  </property>
-  <property>
-    <name>dfs.ha.fencing.methods</name>
-    <value>shell(/bin/true)</value>
-  </property>
-  <property>
-    <name>dfs.namenode.datanode.registration.ip-hostname-check</name>
-    <value>false</value>
-  </property>
-  <property>
-    <name>dfs.namenode.name.dir</name>
-    <value>/data/hadoop/namenode</value>
-    <description>Path on the local filesystem where the NameNode stores the namespace and transaction logs persistently.</description>
-  </property>
-  <property>
-    <name>dfs.datanode.data.dir</name>
-    <value>/data/hadoop/datanode</value>
-    <description>Comma-separated list of paths on the local filesystem of a DataNode where it stores its blocks.</description>
-  </property>
-  <property>
-    <name>dfs.replication</name>
-    <value>` + hdfsCluster.Spec.ClusterConfig.DfsReplication + `</value>
-    <description>Default block replication. The actual number of replications can be specified when the file is created.</description>
-  </property>
-  <property>
-    <name>dfs.permissions.enabled</name>
-    <value>true</value>
-    <description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
-  </property>` + customHdfsSite
-	hdfsSite = xmlfmt.FormatXML(hdfsSite, "", "  ")
-	return hdfsSite
+
+	hdfsSite := make(map[string]string)
+	hdfsSite["dfs.nameservices"] = "hdfs-k8s"
+	hdfsSite["dfs.ha.namenodes.hdfs-k8s"] = "nn0,nn1"
+	hdfsSite["dfs.namenode.rpc-address.hdfs-k8s.nn0"] = hdfsCluster.Name + "-namenode-0." + hdfsCluster.Name +
+		"-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:9000"
+	hdfsSite["dfs.namenode.rpc-address.hdfs-k8s.nn1"] = hdfsCluster.Name + "-namenode-1." + hdfsCluster.Name +
+		"-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:9000"
+	hdfsSite["dfs.namenode.http-address.hdfs-k8s.nn0"] = hdfsCluster.Name + "-namenode-0." + hdfsCluster.Name +
+		"-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:9870"
+	hdfsSite["dfs.namenode.http-address.hdfs-k8s.nn1"] = hdfsCluster.Name + "-namenode-1." + hdfsCluster.Name +
+		"-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:9870"
+	hdfsSite["dfs.namenode.shared.edits.dir"] = "qjournal://" + qjournal + "/hdfs-k8s"
+	hdfsSite["dfs.client.failover.proxy.provider.hdfs-k8s"] = "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider"
+	hdfsSite["dfs.namenode.datanode.registration.ip-hostname-check"] = "false"
+	hdfsSite["dfs.namenode.name.dir"] = "/data/hadoop/namenode"
+	hdfsSite["dfs.datanode.data.dir"] = "/data/hadoop/datanode"
+	hdfsSite["dfs.journalnode.edits.dir"] = "/data/hadoop/journalnode"
+	hdfsSite["dfs.replication"] = hdfsCluster.Spec.ClusterConfig.DfsReplication
+	hdfsSite["dfs.permissions.enabled"] = "true"
+	hdfsSite["dfs.ha.fencing.methods"] = "shell(/bin/true)"
+	hdfsSite["dfs.ha.automatic-failover.enabled"] = "true"
+	for _, item := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.HdfsSite {
+		hdfsSite[item.Name] = item.Value
+	}
+	return mapToXml(hdfsSite)
 }
 
 //func (r *HDFSClusterReconciler) clusterConfigExists(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster) (bool, error) {

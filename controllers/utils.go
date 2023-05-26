@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/go-xmlfmt/xmlfmt"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,4 +53,19 @@ func (r *HDFSClusterReconciler) scaleDeployment(ctx context.Context, name, names
 	}
 
 	return nil
+}
+
+func mapToXml(properties map[string]string) string {
+	var res string
+	for key, value := range properties {
+		property := `<property>
+	<name>` + key + `</name>
+	<value>` + value + `</value>
+</property>`
+		res = res + property
+	}
+
+	res = xmlfmt.FormatXML(res, "", "  ")
+
+	return res
 }
