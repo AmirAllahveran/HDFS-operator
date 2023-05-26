@@ -9,8 +9,11 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"net"
+	"regexp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 func (r *HDFSClusterReconciler) desiredHANameNodeConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
@@ -193,6 +196,50 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 }
 
 func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.Service, error) {
+
+	var webPort int
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.http-address"]; ok {
+		_, portStr, err := net.SplitHostPort(val)
+		if err != nil {
+			return nil, err
+		}
+		webPort, _ = strconv.Atoi(portStr)
+	} else {
+		webPort = 9870
+	}
+	var defaultPort int
+	if hdfsCluster.Spec.NameNode.Replicas == 1 {
+		if val, ok := hdfsCluster.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; ok {
+			_, portStr, err := net.SplitHostPort(val)
+			if err != nil {
+				return nil, err
+			}
+			defaultPort, _ = strconv.Atoi(portStr)
+		} else {
+			defaultPort = 8020
+		}
+	} else {
+		// Compile your regex
+		var key string
+		re, _ := regexp.Compile(`dfs.namenode.rpc-address\..+`)
+		// Iteration over the map
+		for k, _ := range hdfsCluster.Spec.ClusterConfig.HdfsSite {
+			if re.MatchString(k) {
+				key = k
+				break
+			}
+		}
+		if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite[key]; ok {
+			_, portStr, err := net.SplitHostPort(val)
+			if err != nil {
+				return nil, err
+			}
+			defaultPort, _ = strconv.Atoi(portStr)
+		} else {
+			defaultPort = 8020
+		}
+	}
+
 	svcTemplate := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: hdfsCluster.Namespace,
@@ -207,12 +254,12 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 			Ports: []corev1.ServicePort{
 				{
 					Name:       "web",
-					Port:       9870,
+					Port:       int32(webPort),
 					TargetPort: intstr.FromString("web"),
 				},
 				{
 					Name:       "default",
-					Port:       8020,
+					Port:       int32(defaultPort),
 					TargetPort: intstr.FromString("default"),
 				},
 			},
@@ -233,12 +280,54 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 }
 
 func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
-
+	var webPort int
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.http-address"]; ok {
+		_, portStr, err := net.SplitHostPort(val)
+		if err != nil {
+			return nil, err
+		}
+		webPort, _ = strconv.Atoi(portStr)
+	} else {
+		webPort = 9870
+	}
 	var namenodeDataDir string
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.data.dir"]; ok {
 		namenodeDataDir = val
 	} else {
 		namenodeDataDir = "/data/hadoop/namenode"
+	}
+
+	var defaultPort int
+	if hdfsCluster.Spec.NameNode.Replicas == 1 {
+		if val, ok := hdfsCluster.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; ok {
+			_, portStr, err := net.SplitHostPort(val)
+			if err != nil {
+				return nil, err
+			}
+			defaultPort, _ = strconv.Atoi(portStr)
+		} else {
+			defaultPort = 8020
+		}
+	} else {
+		// Compile your regex
+		var key string
+		re, _ := regexp.Compile(`dfs.namenode.rpc-address\..+`)
+		// Iteration over the map
+		for k, _ := range hdfsCluster.Spec.ClusterConfig.HdfsSite {
+			if re.MatchString(k) {
+				key = k
+				break
+			}
+		}
+		if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite[key]; ok {
+			_, portStr, err := net.SplitHostPort(val)
+			if err != nil {
+				return nil, err
+			}
+			defaultPort, _ = strconv.Atoi(portStr)
+		} else {
+			defaultPort = 8020
+		}
 	}
 
 	stsTempalte := &appsv1.StatefulSet{
@@ -277,11 +366,11 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "default",
-									ContainerPort: 8020,
+									ContainerPort: int32(defaultPort),
 								},
 								{
 									Name:          "web",
-									ContainerPort: 9870,
+									ContainerPort: int32(webPort),
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -399,11 +488,54 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 }
 
 func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
+	var webPort int
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.http-address"]; ok {
+		_, portStr, err := net.SplitHostPort(val)
+		if err != nil {
+			return nil, err
+		}
+		webPort, _ = strconv.Atoi(portStr)
+	} else {
+		webPort = 9870
+	}
 	var namenodeDataDir string
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.data.dir"]; ok {
 		namenodeDataDir = val
 	} else {
 		namenodeDataDir = "/data/hadoop/namenode"
+	}
+
+	var defaultPort int
+	if hdfsCluster.Spec.NameNode.Replicas == 1 {
+		if val, ok := hdfsCluster.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; ok {
+			_, portStr, err := net.SplitHostPort(val)
+			if err != nil {
+				return nil, err
+			}
+			defaultPort, _ = strconv.Atoi(portStr)
+		} else {
+			defaultPort = 8020
+		}
+	} else {
+		// Compile your regex
+		var key string
+		re, _ := regexp.Compile(`dfs.namenode.rpc-address\..+`)
+		// Iteration over the map
+		for k, _ := range hdfsCluster.Spec.ClusterConfig.HdfsSite {
+			if re.MatchString(k) {
+				key = k
+				break
+			}
+		}
+		if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite[key]; ok {
+			_, portStr, err := net.SplitHostPort(val)
+			if err != nil {
+				return nil, err
+			}
+			defaultPort, _ = strconv.Atoi(portStr)
+		} else {
+			defaultPort = 8020
+		}
 	}
 	stsTempalte := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -441,11 +573,11 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "default",
-									ContainerPort: 8020,
+									ContainerPort: int32(defaultPort),
 								},
 								{
 									Name:          "web",
-									ContainerPort: 9870,
+									ContainerPort: int32(webPort),
 								},
 							},
 							Command: []string{

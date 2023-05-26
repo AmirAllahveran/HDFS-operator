@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"net"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
@@ -45,6 +46,29 @@ func (r *HDFSClusterReconciler) desiredJournalNodePodDisruptionBudget(hdfs *v1al
 }
 
 func (r *HDFSClusterReconciler) desiredJournalNodeService(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.Service, error) {
+
+	var httpPort int
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.journalnode.http-address"]; ok {
+		_, portStr, err := net.SplitHostPort(val)
+		if err != nil {
+			return nil, err
+		}
+		httpPort, _ = strconv.Atoi(portStr)
+	} else {
+		httpPort = 8480
+	}
+
+	var rpcPort int
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.journalnode.rpc-address"]; ok {
+		_, portStr, err := net.SplitHostPort(val)
+		if err != nil {
+			return nil, err
+		}
+		rpcPort, _ = strconv.Atoi(portStr)
+	} else {
+		rpcPort = 8485
+	}
+
 	svcTemplate := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: hdfsCluster.Namespace,
@@ -59,13 +83,13 @@ func (r *HDFSClusterReconciler) desiredJournalNodeService(hdfsCluster *v1alpha1.
 			Ports: []corev1.ServicePort{
 				{
 					Name:       "http",
-					Port:       8480,
+					Port:       int32(httpPort),
 					TargetPort: intstr.FromString("http"),
 				},
 				{
-					Name:       "ipc",
-					Port:       8485,
-					TargetPort: intstr.FromString("ipc"),
+					Name:       "rpc",
+					Port:       int32(rpcPort),
+					TargetPort: intstr.FromString("rpc"),
 				},
 			},
 			ClusterIP: corev1.ClusterIPNone,
@@ -158,6 +182,28 @@ func (r *HDFSClusterReconciler) createOrUpdateJournalNode(ctx context.Context, h
 
 func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
 
+	var httpPort int
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.journalnode.http-address"]; ok {
+		_, portStr, err := net.SplitHostPort(val)
+		if err != nil {
+			return nil, err
+		}
+		httpPort, _ = strconv.Atoi(portStr)
+	} else {
+		httpPort = 8480
+	}
+
+	var rpcPort int
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.journalnode.rpc-address"]; ok {
+		_, portStr, err := net.SplitHostPort(val)
+		if err != nil {
+			return nil, err
+		}
+		rpcPort, _ = strconv.Atoi(portStr)
+	} else {
+		rpcPort = 8485
+	}
+
 	var journalnodeDataDir string
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.journalnode.edits.dir"]; ok {
 		journalnodeDataDir = val
@@ -201,11 +247,11 @@ func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alp
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "http",
-									ContainerPort: 8480,
+									ContainerPort: int32(httpPort),
 								},
 								{
-									Name:          "ipc",
-									ContainerPort: 8485,
+									Name:          "rpc",
+									ContainerPort: int32(rpcPort),
 								},
 							},
 							Env: []corev1.EnvVar{
