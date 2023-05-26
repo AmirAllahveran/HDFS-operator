@@ -82,7 +82,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 				},
 			},
 			ServiceName: hdfsCluster.Name + "-datanode",
-			Replicas:    stringToInt32(hdfsCluster.Spec.DataNode.Replicas),
+			Replicas:    int32Ptr(int32(hdfsCluster.Spec.DataNode.Replicas)),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{

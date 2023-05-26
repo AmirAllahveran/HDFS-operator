@@ -99,7 +99,7 @@ func TestHDFSClusterReconciler_createOrUpdateConfigmap(t *testing.T) {
 	}
 
 	// Update HDFSCluster's Spec to change the desired ConfigMap Data
-	hdfsCluster.Spec.ClusterConfig.DfsReplication = "3"
+	hdfsCluster.Spec.ClusterConfig.DfsReplication = 3
 
 	// Call createOrUpdateConfigmap again - this should update the existing ConfigMap
 	if err := r.createOrUpdateConfigmap(context.Background(), hdfsCluster); err != nil {

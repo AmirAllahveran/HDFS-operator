@@ -29,7 +29,7 @@ func TestHDFSClusterReconciler_desiredNameNodeService(t *testing.T) {
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
 			NameNode: v1alpha1.NameNode{
-				Replicas: "1",
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},
@@ -88,7 +88,7 @@ func TestHDFSClusterReconciler_desiredNameNodeStatefulSet(t *testing.T) {
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
 			NameNode: v1alpha1.NameNode{
-				Replicas: "1",
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},
@@ -150,7 +150,7 @@ func TestHDFSClusterReconciler_createOrUpdateNameNode(t *testing.T) {
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
 			NameNode: v1alpha1.NameNode{
-				Replicas: "1",
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},

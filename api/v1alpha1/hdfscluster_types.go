@@ -32,37 +32,31 @@ type HDFSClusterSpec struct {
 }
 
 type NameNode struct {
-	// +kubebuilder:validation:Pattern:=^[12]$
-	Replicas string `json:"replicas"`
+	Replicas int `json:"replicas"`
 	// +kubebuilder:validation:Optional
 	Resources Resources `json:"resources"`
 }
 
 type DataNode struct {
-	// +kubebuilder:validation:Pattern:=^[123]$
-	Replicas string `json:"replicas"`
+	Replicas int `json:"replicas"`
 	// +kubebuilder:validation:Optional
 	Resources Resources `json:"resources"`
 }
 
 type Zookeeper struct {
-	// +kubebuilder:validation:Pattern:=^[13]$
-	Replicas string `json:"replicas"`
+	Replicas int `json:"replicas"`
 	// +kubebuilder:validation:Optional
 	Resources Resources `json:"resources"`
 }
 
 type JournalNode struct {
-	// +kubebuilder:validation:Pattern:=^[13]$
-	Replicas string `json:"replicas"`
+	Replicas int `json:"replicas"`
 	// +kubebuilder:validation:Optional
 	Resources Resources `json:"resources"`
 }
 
 type ClusterConfig struct {
-	// +kubebuilder:validation:Pattern:=^[123]$
-	// +kubebuilder:default:="2"
-	DfsReplication     string             `json:"dfsReplication"`
+	DfsReplication     int                `json:"dfsReplication"`
 	CustomHadoopConfig CustomHadoopConfig `json:"customHadoopConfig,omitempty"`
 }
 

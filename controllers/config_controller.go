@@ -9,13 +9,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
 
 	coreSite := ""
 	hdfsSite := ""
-	if hdfsCluster.Spec.NameNode.Replicas == "1" {
+	if hdfsCluster.Spec.NameNode.Replicas == 1 {
 		coreSite = configCoreSiteSingle(hdfsCluster)
 		hdfsSite = configHdfsSiteSingle(hdfsCluster)
 	} else {
@@ -58,7 +59,7 @@ func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 
 func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	zookeeperQuorum := hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
-	if hdfsCluster.Spec.Zookeeper.Replicas == "3" {
+	if hdfsCluster.Spec.Zookeeper.Replicas == 3 {
 		zookeeperQuorum = hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
 			hdfsCluster.Name + "-zookeeper-1." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
 			hdfsCluster.Name + "-zookeeper-2." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
@@ -79,7 +80,7 @@ func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 	hdfsSite["dfs.namenode.datanode.registration.ip-hostname-check"] = "false"
 	hdfsSite["dfs.namenode.name.dir"] = "/data/hadoop/namenode"
 	hdfsSite["dfs.datanode.data.dir"] = "/data/hadoop/datanode"
-	hdfsSite["dfs.replication"] = hdfsCluster.Spec.ClusterConfig.DfsReplication
+	hdfsSite["dfs.replication"] = strconv.Itoa(hdfsCluster.Spec.ClusterConfig.DfsReplication)
 	hdfsSite["dfs.permissions.enabled"] = "true"
 	for key, val := range hdfsCluster.Spec.ClusterConfig.CustomHadoopConfig.HdfsSite {
 		hdfsSite[key] = val
@@ -89,7 +90,7 @@ func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 
 func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	qjournal := hdfsCluster.Name + "-journalnode-0." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485"
-	if hdfsCluster.Spec.JournalNode.Replicas == "3" {
+	if hdfsCluster.Spec.JournalNode.Replicas == 3 {
 		qjournal = hdfsCluster.Name + "-journalnode-0." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485;" +
 			hdfsCluster.Name + "-journalnode-1." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485;" +
 			hdfsCluster.Name + "-journalnode-2." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485"
@@ -108,7 +109,7 @@ func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	hdfsSite["dfs.namenode.name.dir"] = "/data/hadoop/namenode"
 	hdfsSite["dfs.datanode.data.dir"] = "/data/hadoop/datanode"
 	hdfsSite["dfs.journalnode.edits.dir"] = "/data/hadoop/journalnode"
-	hdfsSite["dfs.replication"] = hdfsCluster.Spec.ClusterConfig.DfsReplication
+	hdfsSite["dfs.replication"] = strconv.Itoa(hdfsCluster.Spec.ClusterConfig.DfsReplication)
 	hdfsSite["dfs.permissions.enabled"] = "true"
 	hdfsSite["dfs.ha.fencing.methods"] = "shell(/bin/true)"
 	hdfsSite["dfs.ha.automatic-failover.enabled"] = "true"
@@ -171,7 +172,7 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace)
 		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace)
 		err = r.ScaleDownAndUpDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace)
-		if hdfs.Spec.NameNode.Replicas == "2" {
+		if hdfs.Spec.NameNode.Replicas == 2 {
 			err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-journalnode", hdfs.Namespace)
 		}
 	}

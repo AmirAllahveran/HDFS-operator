@@ -53,17 +53,14 @@ spec:
                         type: object
                     type: object
                   dfsReplication:
-                    default: "2"
-                    pattern: ^[123]$
-                    type: string
+                    type: integer
                 required:
                 - dfsReplication
                 type: object
               dataNode:
                 properties:
                   replicas:
-                    pattern: ^[123]$
-                    type: string
+                    type: integer
                   resources:
                     properties:
                       cpu:
@@ -81,8 +78,7 @@ spec:
               journalNode:
                 properties:
                   replicas:
-                    pattern: ^[13]$
-                    type: string
+                    type: integer
                   resources:
                     properties:
                       cpu:
@@ -100,8 +96,7 @@ spec:
               nameNode:
                 properties:
                   replicas:
-                    pattern: ^[12]$
-                    type: string
+                    type: integer
                   resources:
                     properties:
                       cpu:
@@ -119,8 +114,7 @@ spec:
               zookeeper:
                 properties:
                   replicas:
-                    pattern: ^[13]$
-                    type: string
+                    type: integer
                   resources:
                     properties:
                       cpu:

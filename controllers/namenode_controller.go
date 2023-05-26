@@ -88,7 +88,7 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 	// Define the desired NameNode StatefulSet object
 
 	desiredStatefulSet := &appsv1.StatefulSet{}
-	if hdfsCluster.Spec.NameNode.Replicas == "1" {
+	if hdfsCluster.Spec.NameNode.Replicas == 1 {
 		desiredStatefulSet, _ = r.desiredSingleNameNodeStatefulSet(hdfsCluster)
 	} else {
 		desiredStatefulSet, _ = r.desiredHANameNodeStatefulSet(hdfsCluster)
@@ -252,7 +252,7 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 				},
 			},
 			ServiceName: hdfsCluster.Name + "-namenode",
-			Replicas:    stringToInt32(hdfsCluster.Spec.NameNode.Replicas),
+			Replicas:    int32Ptr(int32(hdfsCluster.Spec.NameNode.Replicas)),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -395,7 +395,7 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 				},
 			},
 			ServiceName: hdfsCluster.Name + "-namenode",
-			Replicas:    stringToInt32(hdfsCluster.Spec.NameNode.Replicas),
+			Replicas:    int32Ptr(int32(hdfsCluster.Spec.NameNode.Replicas)),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{

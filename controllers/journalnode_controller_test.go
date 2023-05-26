@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"strconv"
 	"testing"
 )
 
@@ -28,10 +27,10 @@ func TestDesiredJournalNode(t *testing.T) {
 	hdfs := &v1alpha1.HDFSCluster{
 		Spec: v1alpha1.HDFSClusterSpec{
 			NameNode: v1alpha1.NameNode{
-				Replicas: "2",
+				Replicas: 2,
 			},
 			JournalNode: v1alpha1.JournalNode{
-				Replicas: "3",
+				Replicas: 3,
 			},
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -54,8 +53,7 @@ func TestDesiredJournalNode(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	replicas, _ := strconv.ParseInt(hdfs.Spec.JournalNode.Replicas, 10, 32)
-	expectedMinAvailable := replicas/2 + 1
+	expectedMinAvailable := hdfs.Spec.JournalNode.Replicas/2 + 1
 	if pdb.Spec.MinAvailable.IntVal != int32(expectedMinAvailable) {
 		t.Errorf("Expected MinAvailable to be %d but got %d", expectedMinAvailable, pdb.Spec.MinAvailable.IntVal)
 	}
@@ -90,13 +88,13 @@ func TestHDFSClusterReconciler_desiredJournalNodeService(t *testing.T) {
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
 			NameNode: v1alpha1.NameNode{
-				Replicas: "2",
+				Replicas: 2,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},
 			},
 			JournalNode: v1alpha1.JournalNode{
-				Replicas: "1",
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},
@@ -157,13 +155,13 @@ func TestHDFSClusterReconciler_createOrUpdateJournalNode(t *testing.T) {
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
 			NameNode: v1alpha1.NameNode{
-				Replicas: "2",
+				Replicas: 2,
 				Resources: v1alpha1.Resources{
 					Storage: "10Gi",
 				},
 			},
 			JournalNode: v1alpha1.JournalNode{
-				Replicas: "3",
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "3G",
 				},
@@ -213,7 +211,7 @@ func TestHDFSClusterReconciler_desiredJournalNodeStatefulSet(t *testing.T) {
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
 			JournalNode: v1alpha1.JournalNode{
-				Replicas: "3",
+				Replicas: 3,
 				Resources: v1alpha1.Resources{
 					Storage: "10Gi",
 				},

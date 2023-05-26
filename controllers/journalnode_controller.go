@@ -16,8 +16,8 @@ import (
 )
 
 func (r *HDFSClusterReconciler) desiredJournalNodePodDisruptionBudget(hdfs *v1alpha1.HDFSCluster) (*v1.PodDisruptionBudget, error) {
-	replicas, _ := strconv.ParseInt(hdfs.Spec.JournalNode.Replicas, 10, 32)
-	minAvailable := replicas/2 + 1
+
+	minAvailable := hdfs.Spec.JournalNode.Replicas/2 + 1
 	pdbTemplate := &v1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfs.Name + "-journalnode",
@@ -176,7 +176,7 @@ func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alp
 				},
 			},
 			ServiceName: hdfsCluster.Name + "-journalnode",
-			Replicas:    stringToInt32(hdfsCluster.Spec.JournalNode.Replicas),
+			Replicas:    int32Ptr(int32(hdfsCluster.Spec.JournalNode.Replicas)),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{

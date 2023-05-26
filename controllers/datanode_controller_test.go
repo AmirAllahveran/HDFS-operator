@@ -157,7 +157,7 @@ func TestHDFSClusterReconciler_desiredDataNodeStatefulSet(t *testing.T) {
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
 			DataNode: v1alpha1.DataNode{
-				Replicas: "3",
+				Replicas: 3,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},

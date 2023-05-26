@@ -104,7 +104,7 @@ func (r *HDFSClusterReconciler) desiredZookeeperService(hdfsCluster *v1alpha1.HD
 
 func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
 	zookeeperServices := hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2888:3888::1"
-	if hdfsCluster.Spec.Zookeeper.Replicas == "3" {
+	if hdfsCluster.Spec.Zookeeper.Replicas == 3 {
 		zookeeperServices = hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2888:3888::1 " +
 			hdfsCluster.Name + "-zookeeper-1." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2888:3888::2 " +
 			hdfsCluster.Name + "-zookeeper-2." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2888:3888::3"
@@ -129,7 +129,7 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 				},
 			},
 			ServiceName: hdfsCluster.Name + "-zookeeper",
-			Replicas:    stringToInt32(hdfsCluster.Spec.Zookeeper.Replicas),
+			Replicas:    int32Ptr(int32(hdfsCluster.Spec.Zookeeper.Replicas)),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{

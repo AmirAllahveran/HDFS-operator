@@ -26,19 +26,19 @@ func TestHDFSClusterReconciler_desiredZookeeperService(t *testing.T) {
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
 			NameNode: v1alpha1.NameNode{
-				Replicas: "2",
+				Replicas: 2,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},
 			},
 			JournalNode: v1alpha1.JournalNode{
-				Replicas: "1",
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},
 			},
 			Zookeeper: v1alpha1.Zookeeper{
-				Replicas: "1",
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "3Gi",
 				},
@@ -106,19 +106,19 @@ func TestHDFSClusterReconciler_desiredZookeeperConfigMap(t *testing.T) {
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
 			NameNode: v1alpha1.NameNode{
-				Replicas: "2",
+				Replicas: 2,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},
 			},
 			JournalNode: v1alpha1.JournalNode{
-				Replicas: "1",
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},
 			},
 			Zookeeper: v1alpha1.Zookeeper{
-				Replicas: "1",
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "3Gi",
 				},
@@ -173,19 +173,19 @@ func TestHDFSClusterReconciler_desiredZookeeperStatefulSet(t *testing.T) {
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
 			NameNode: v1alpha1.NameNode{
-				Replicas: "2",
+				Replicas: 2,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},
 			},
 			JournalNode: v1alpha1.JournalNode{
-				Replicas: "1",
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},
 			},
 			Zookeeper: v1alpha1.Zookeeper{
-				Replicas: "3",
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "3Gi",
 				},
