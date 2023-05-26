@@ -70,14 +70,22 @@ func TestHDFSClusterReconciler_desiredZookeeperService(t *testing.T) {
 
 	expectedPorts := []corev1.ServicePort{
 		{
+			Name:       "client",
+			Port:       2181,
+			TargetPort: intstr.FromString("client"),
+			Protocol:   corev1.ProtocolTCP,
+		},
+		{
 			Name:       "server",
 			Port:       2888,
 			TargetPort: intstr.FromString("server"),
+			Protocol:   corev1.ProtocolTCP,
 		},
 		{
 			Name:       "leader-election",
 			Port:       3888,
 			TargetPort: intstr.FromString("leader-election"),
+			Protocol:   corev1.ProtocolTCP,
 		},
 	}
 	assert.Equal(t, expectedPorts, svc.Spec.Ports)
