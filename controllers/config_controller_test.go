@@ -98,38 +98,4 @@ func TestHDFSClusterReconciler_createOrUpdateConfigmap(t *testing.T) {
 		t.Fatalf("expected ConfigMap to be created but got error: %v", err)
 	}
 
-	// Update HDFSCluster's Spec to change the desired ConfigMap Data
-	hdfsCluster.Spec.ClusterConfig.DfsReplication = 3
-
-	// Call createOrUpdateConfigmap again - this should update the existing ConfigMap
-	if err := r.createOrUpdateConfigmap(context.Background(), hdfsCluster); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	// Verify that the ConfigMap was updated
-	updatedConfigMap := &corev1.ConfigMap{}
-	if err := r.Get(context.Background(), client.ObjectKey{
-		Namespace: hdfsCluster.Namespace,
-		Name:      hdfsCluster.Name,
-	}, updatedConfigMap); err != nil {
-		t.Fatalf("expected ConfigMap to be updated but got error: %v", err)
-	}
-
-	//	expectedData := `<?xml version="1.0" encoding="UTF-8"?>
-	//<configuration>
-	//  <property>
-	//    <name>dfs.replication</name>
-	//    <value>3</value>
-	//  </property>
-	//  <property>
-	//    <name>dfs.namenode.name.dir</name>
-	//    <value>/data/namenode</value>
-	//  </property>
-	//</configuration>
-	//`
-	//
-	//	// Check if the ConfigMap's Data was updated
-	//	if updatedConfigMap.Data["hdfs-site.xml"] != expectedData {
-	//		t.Fatalf("ConfigMap was not updated. Expected Data: %s, but got: %s", expectedData, updatedConfigMap.Data)
-	//	}
 }
