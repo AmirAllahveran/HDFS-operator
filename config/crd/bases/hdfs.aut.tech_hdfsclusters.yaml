@@ -161,8 +161,6 @@ spec:
             properties:
               creationTime:
                 type: string
-              lastUpdated:
-                type: string
             required:
             - creationTime
             type: object
