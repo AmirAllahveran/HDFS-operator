@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"context"
+	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"strings"
@@ -61,92 +61,6 @@ func TestInt32Ptr(t *testing.T) {
 	}
 }
 
-func TestScaleDeployment(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-
-	namespace := "default"
-	name := "test-deployment"
-	initialReplicas := int32(3)
-	desiredReplicas := int32(2)
-
-	deployment := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &initialReplicas,
-		},
-	}
-
-	r := &HDFSClusterReconciler{
-		Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(deployment).Build(),
-		Scheme: scheme,
-	}
-
-	err := r.scaleDeployment(context.Background(), name, namespace, desiredReplicas)
-	if err != nil {
-		t.Fatalf("Failed to scale Deployment: %v", err)
-	}
-
-	updatedDeployment := &appsv1.Deployment{}
-	err = r.Client.Get(context.Background(), client.ObjectKey{
-		Namespace: namespace,
-		Name:      name,
-	}, updatedDeployment)
-	if err != nil {
-		t.Fatalf("Failed to get updated Deployment: %v", err)
-	}
-
-	if *updatedDeployment.Spec.Replicas != desiredReplicas {
-		t.Errorf("Deployment replicas mismatch: expected '%d', got '%d'", desiredReplicas, *updatedDeployment.Spec.Replicas)
-	}
-}
-
-func TestScaleStatefulSet(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-
-	namespace := "default"
-	name := "test-deployment"
-	initialReplicas := int32(3)
-	desiredReplicas := int32(2)
-
-	sts := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: appsv1.StatefulSetSpec{
-			Replicas: &initialReplicas,
-		},
-	}
-
-	r := &HDFSClusterReconciler{
-		Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(sts).Build(),
-		Scheme: scheme,
-	}
-
-	err := r.scaleStatefulSet(context.Background(), name, namespace, desiredReplicas)
-	if err != nil {
-		t.Fatalf("Failed to scale Deployment: %v", err)
-	}
-
-	updatedSts := &appsv1.StatefulSet{}
-	err = r.Client.Get(context.Background(), client.ObjectKey{
-		Namespace: namespace,
-		Name:      name,
-	}, updatedSts)
-	if err != nil {
-		t.Fatalf("Failed to get updated Deployment: %v", err)
-	}
-
-	if *updatedSts.Spec.Replicas != desiredReplicas {
-		t.Errorf("Deployment replicas mismatch: expected '%d', got '%d'", desiredReplicas, *updatedSts.Spec.Replicas)
-	}
-}
-
 func TestMapToXml(t *testing.T) {
 	properties := map[string]string{
 		"key1": "value1",
@@ -160,5 +74,119 @@ func TestMapToXml(t *testing.T) {
 
 	if !strings.Contains(res, "key2") || !strings.Contains(res, "value2") {
 		t.Errorf("Expected 'key2' and 'value2' to be in the result, got %s", res)
+	}
+}
+
+func TestHDFSClusterReconciler_ScaleDownAndUpDeployment(t *testing.T) {
+	// Set up a fake client to mock API calls
+	s := runtime.NewScheme()
+	_ = appsv1.AddToScheme(s)
+	_ = v1alpha1.AddToScheme(s) // Add your custom resource to the scheme
+
+	// Create a HDFSCluster object
+	hdfsCluster := &v1alpha1.HDFSCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hdfs-cluster",
+			Namespace: "default",
+		},
+	}
+
+	// Create a Reconciler instance with the fake client
+	r := &HDFSClusterReconciler{
+		Client: fake.NewClientBuilder().WithScheme(s).WithObjects(hdfsCluster).Build(),
+		Scheme: s,
+	}
+
+	// Create a new Deployment
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-deployment",
+			Namespace: "default",
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: int32Ptr(3), // 3 replicas initially
+		},
+	}
+	// Create the Deployment
+	err := r.Create(context.Background(), deployment)
+	if err != nil {
+		t.Fatalf("failed to create test deployment: %v", err)
+	}
+
+	// Scale down and up the deployment
+	err = r.ScaleDownAndUpDeployment(context.Background(), "test-deployment", "default")
+	if err != nil {
+		t.Fatalf("failed to scale down and up deployment: %v", err)
+	}
+
+	// Fetch the deployment to check the replicas
+	err = r.Get(context.Background(), client.ObjectKey{
+		Namespace: "default",
+		Name:      "test-deployment",
+	}, deployment)
+	if err != nil {
+		t.Fatalf("failed to get deployment: %v", err)
+	}
+
+	// Assert that the number of replicas is still 3
+	if *deployment.Spec.Replicas != 3 {
+		t.Errorf("unexpected number of replicas: got %v want %v", *deployment.Spec.Replicas, 3)
+	}
+}
+
+func TestHDFSClusterReconciler_ScaleDownAndUpStatefulSet(t *testing.T) {
+	// Set up a fake client to mock API calls
+	s := runtime.NewScheme()
+	_ = appsv1.AddToScheme(s)
+	_ = v1alpha1.AddToScheme(s) // Add your custom resource to the scheme
+
+	// Create a HDFSCluster object
+	hdfsCluster := &v1alpha1.HDFSCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hdfs-cluster",
+			Namespace: "default",
+		},
+	}
+
+	// Create a Reconciler instance with the fake client
+	r := &HDFSClusterReconciler{
+		Client: fake.NewClientBuilder().WithScheme(s).WithObjects(hdfsCluster).Build(),
+		Scheme: s,
+	}
+
+	// Create a new sts
+	sts := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-sts",
+			Namespace: "default",
+		},
+		Spec: appsv1.StatefulSetSpec{
+			Replicas: int32Ptr(3), // 3 replicas initially
+		},
+	}
+	// Create the sts
+	err := r.Create(context.Background(), sts)
+	if err != nil {
+		t.Fatalf("failed to create test sts: %v", err)
+	}
+
+	// Scale down and up the sts
+	err = r.ScaleDownAndUpStatefulSet(context.Background(), "test-sts", "default")
+	if err != nil {
+		t.Fatalf("failed to scale down and up sts: %v", err)
+	}
+
+	// Fetch the sts to check the replicas
+	err = r.Get(context.Background(), client.ObjectKey{
+		Namespace: "default",
+		Name:      "test-sts",
+	}, sts)
+	if err != nil {
+		t.Fatalf("failed to get sts: %v", err)
+	}
+
+	// Assert that the number of replicas is still 3
+	if *sts.Spec.Replicas != 3 {
+		t.Errorf("unexpected number of replicas: got %v want %v", *sts.Spec.Replicas, 3)
 	}
 }

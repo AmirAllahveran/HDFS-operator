@@ -168,17 +168,16 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		//	return errStatus
 		//}
 	} else {
-		//dataNodeReplica, _ := strconv.ParseInt(hdfs.Spec.DataNode.Replicas, 10, 32)
-		//err = r.scaleStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace, 0)
-		//err = r.scaleStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace, 0)
-		//err = r.scaleDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace, 0)
 		existingConfigMap.Data = desiredConfigMap.Data
-		//if err := r.Update(ctx, existingConfigMap); err != nil {
-		//	return err
-		//}
-		//err = r.scaleDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace, 1)
-		//err = r.scaleStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace, 1)
-		//err = r.scaleStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace, int32(dataNodeReplica))
+		if err := r.Update(ctx, existingConfigMap); err != nil {
+			return err
+		}
+		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace)
+		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace)
+		err = r.ScaleDownAndUpDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace)
+		if hdfs.Spec.NameNode.Replicas == "2" {
+			err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-journalnode", hdfs.Namespace)
+		}
 	}
 
 	return nil
