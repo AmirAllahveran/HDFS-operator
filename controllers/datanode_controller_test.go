@@ -65,7 +65,7 @@ set -o errtrace
 set -o nounset
 set -o pipefail
 set -o xtrace
-_PORTS="50075 1006"
+_PORTS="9866 9864"
 _URL_PATH="jmx?qry=Hadoop:service=DataNode,name=DataNodeInfo"
 _CLUSTER_ID=""
 for _PORT in $_PORTS; do
@@ -202,8 +202,8 @@ func TestHDFSClusterReconciler_desiredDataNodeStatefulSet(t *testing.T) {
 	}
 
 	// Check the container image
-	if sts.Spec.Template.Spec.Containers[0].Image != "uhopper/hadoop-datanode:2.7.2" {
-		t.Errorf("expected image to be 'uhopper/hadoop-datanode:2.7.2', got: %s", sts.Spec.Template.Spec.Containers[0].Image)
+	if sts.Spec.Template.Spec.Containers[0].Image != "amiralh4/datanode:3.3.1" {
+		t.Errorf("expected image to be 'amiralh4/datanode:3.3.1', got: %s", sts.Spec.Template.Spec.Containers[0].Image)
 	}
 
 	// Check the volume claim templates

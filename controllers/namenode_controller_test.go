@@ -63,12 +63,12 @@ func TestHDFSClusterReconciler_desiredNameNodeService(t *testing.T) {
 		{
 			Name:       "web",
 			Port:       9870,
-			TargetPort: intstr.FromString("9870"),
+			TargetPort: intstr.FromString("web"),
 		},
 		{
 			Name:       "default",
 			Port:       8020,
-			TargetPort: intstr.FromString("8020"),
+			TargetPort: intstr.FromString("default"),
 		},
 	}
 	assert.Equal(t, expectedPorts, svc.Spec.Ports)
@@ -117,7 +117,7 @@ func TestHDFSClusterReconciler_desiredNameNodeStatefulSet(t *testing.T) {
 	}
 	assert.Equal(t, expectedLabels, sts.Labels)
 
-	assert.Equal(t, hdfsCluster.Name+"-namenode-service", sts.Spec.ServiceName)
+	assert.Equal(t, hdfsCluster.Name+"-namenode", sts.Spec.ServiceName)
 
 	//expectedReplicas := stringToInt32(hdfsCluster.Spec.NameNode.Replicas)
 	//assert.Equal(t, expectedReplicas, *sts.Spec.Replicas)

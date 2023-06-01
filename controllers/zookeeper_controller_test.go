@@ -179,13 +179,13 @@ func TestHDFSClusterReconciler_desiredZookeeperStatefulSet(t *testing.T) {
 				},
 			},
 			JournalNode: v1alpha1.Node{
-				Replicas: 1,
+				Replicas: 3,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
 				},
 			},
 			Zookeeper: v1alpha1.Node{
-				Replicas: 1,
+				Replicas: 3,
 				Resources: v1alpha1.Resources{
 					Storage: "3Gi",
 				},

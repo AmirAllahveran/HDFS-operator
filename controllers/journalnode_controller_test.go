@@ -131,9 +131,9 @@ func TestHDFSClusterReconciler_desiredJournalNodeService(t *testing.T) {
 			TargetPort: intstr.FromString("http"),
 		},
 		{
-			Name:       "ipc",
+			Name:       "rpc",
 			Port:       8485,
-			TargetPort: intstr.FromString("ipc"),
+			TargetPort: intstr.FromString("rpc"),
 		},
 	}
 	assert.Equal(t, expectedPorts, svc.Spec.Ports)

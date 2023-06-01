@@ -93,7 +93,7 @@ func TestHDFSClusterReconciler_createOrUpdateConfigmap(t *testing.T) {
 	existingConfigMap := &corev1.ConfigMap{}
 	if err := r.Get(context.Background(), client.ObjectKey{
 		Namespace: hdfsCluster.Namespace,
-		Name:      hdfsCluster.Name,
+		Name:      hdfsCluster.Name + "-cluster-config",
 	}, existingConfigMap); err != nil {
 		t.Fatalf("expected ConfigMap to be created but got error: %v", err)
 	}
