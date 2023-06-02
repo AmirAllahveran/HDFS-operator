@@ -24,7 +24,7 @@ import (
 
 // HDFSClusterSpec defines the desired state of HDFSCluster
 type HDFSClusterSpec struct {
-	ClusterConfig ClusterConfig `json:"clusterConfig"`
+	ClusterConfig ClusterConfig `json:"clusterConfig,omitempty"`
 	NameNode      Node          `json:"nameNode"`
 	DataNode      Node          `json:"dataNode"`
 	JournalNode   Node          `json:"journalNode,omitempty"`

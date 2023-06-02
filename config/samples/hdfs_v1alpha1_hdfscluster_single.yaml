@@ -10,13 +10,11 @@ metadata:
   name: hdfscluster-sample
   namespace: sample
 spec:
-  clusterConfig:
-    dfsReplication: "1"
   nameNode:
-    replicas: "1"
+    replicas: 1
     resources:
       storage: 5Gi
   dataNode:
-    replicas: "3"
+    replicas: 3
     resources:
       storage: 10Gi

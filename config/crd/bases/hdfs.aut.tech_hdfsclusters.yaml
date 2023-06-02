@@ -123,7 +123,6 @@ spec:
                 - replicas
                 type: object
             required:
-            - clusterConfig
             - dataNode
             - nameNode
             type: object
