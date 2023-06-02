@@ -387,7 +387,7 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 									Exec: &corev1.ExecAction{
 										Command: []string{"/bin/sh",
 											"-c",
-											"if [ ! -d \"$NAMENODE_DIR\" ]; then mkdir -p $NAMENODE_DIR; chown -R root:root $NAMENODE_DIR; chmod 755 $NAMENODE_DIR; fi"},
+											"if [ ! -d \"$NAMENODE_DIR\" ]; then mkdir -p $NAMENODE_DIR; chown -R root:root $NAMENODE_DIR; chmod 755 $NAMENODE_DIR; rm -rf $NAMENODE_DIR/lost+found; fi"},
 									},
 								},
 							},
@@ -638,7 +638,7 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 									Exec: &corev1.ExecAction{
 										Command: []string{"/bin/sh",
 											"-c",
-											"if [ ! -d \"$NAMENODE_DIR\" ]; then mkdir -p $NAMENODE_DIR; chown -R root:root $NAMENODE_DIR; chmod 755 $NAMENODE_DIR; fi"},
+											"if [ ! -d \"$NAMENODE_DIR\" ]; then mkdir -p $NAMENODE_DIR; chown -R root:root $NAMENODE_DIR; chmod 755 $NAMENODE_DIR; rm -rf $NAMENODE_DIR/lost+found; fi"},
 									},
 								},
 							},
