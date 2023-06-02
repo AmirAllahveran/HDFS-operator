@@ -330,6 +330,8 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 		}
 	}
 
+	compute, _ := resourceRequirements(hdfsCluster.Spec.NameNode.Resources)
+
 	stsTempalte := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-namenode",
@@ -379,6 +381,7 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 									Value: namenodeDataDir,
 								},
 							},
+							Resources: *compute,
 							Lifecycle: &corev1.Lifecycle{
 								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
@@ -537,6 +540,9 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 			defaultPort = 8020
 		}
 	}
+
+	compute, _ := resourceRequirements(hdfsCluster.Spec.NameNode.Resources)
+
 	stsTempalte := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-namenode",
@@ -604,6 +610,7 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 								"-c",
 								"/scripts/start-namenode-ha.sh",
 							},
+							Resources: *compute,
 							Env: []corev1.EnvVar{
 								{
 									Name: "POD_NAME",

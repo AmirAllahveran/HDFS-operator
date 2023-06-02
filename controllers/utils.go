@@ -2,8 +2,11 @@ package controllers
 
 import (
 	"context"
+	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	"github.com/go-xmlfmt/xmlfmt"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 )
@@ -95,4 +98,31 @@ func mapToXml(properties map[string]string) string {
 	res = xmlfmt.FormatXML(res, "", "  ")
 
 	return res
+}
+
+func resourceRequirements(resources v1alpha1.Resources) (*v1.ResourceRequirements, error) {
+	var err error
+
+	req := v1.ResourceRequirements{
+		Requests: v1.ResourceList{},
+		Limits:   v1.ResourceList{},
+	}
+
+	if resources.Cpu != "" {
+		req.Requests[v1.ResourceCPU], err = resource.ParseQuantity(resources.Cpu)
+		if err != nil {
+			return nil, err
+		}
+		req.Limits[v1.ResourceCPU] = req.Requests[v1.ResourceCPU]
+	}
+
+	if resources.Memory != "" {
+		req.Requests[v1.ResourceMemory], err = resource.ParseQuantity(resources.Memory)
+		if err != nil {
+			return nil, err
+		}
+		req.Limits[v1.ResourceMemory] = req.Requests[v1.ResourceMemory]
+	}
+
+	return &req, nil
 }

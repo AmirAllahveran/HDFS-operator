@@ -74,6 +74,8 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 	//	port = 9864
 	//}
 
+	compute, _ := resourceRequirements(hdfsCluster.Spec.DataNode.Resources)
+
 	var datanodeDataDir string
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.datanode.data.dir"]; ok {
 		datanodeDataDir = val
@@ -168,6 +170,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: func() *bool { b := true; return &b }(),
 							},
+							Resources: *compute,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "DATA_DIR",

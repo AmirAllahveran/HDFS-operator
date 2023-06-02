@@ -109,7 +109,7 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 			hdfsCluster.Name + "-zookeeper-1." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2888:3888::2 " +
 			hdfsCluster.Name + "-zookeeper-2." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2888:3888::3"
 	}
-
+	compute, _ := resourceRequirements(hdfsCluster.Spec.Zookeeper.Resources)
 	stsTemplate := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-zookeeper",
@@ -182,6 +182,7 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 									Protocol:      corev1.ProtocolTCP,
 								},
 							},
+							Resources: *compute,
 							SecurityContext: &corev1.SecurityContext{
 								AllowPrivilegeEscalation: func() *bool { b := false; return &b }(),
 								RunAsNonRoot:             func() *bool { b := true; return &b }(),

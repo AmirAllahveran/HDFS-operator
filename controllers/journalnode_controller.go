@@ -211,6 +211,8 @@ func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alp
 		journalnodeDataDir = "/data/hadoop/journalnode"
 	}
 
+	compute, _ := resourceRequirements(hdfsCluster.Spec.JournalNode.Resources)
+
 	stsTemplate := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-journalnode",
@@ -279,6 +281,7 @@ func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alp
 									Value: journalnodeDataDir,
 								},
 							},
+							Resources: *compute,
 							Lifecycle: &corev1.Lifecycle{
 								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{

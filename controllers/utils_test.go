@@ -4,8 +4,11 @@ import (
 	"context"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"strings"
@@ -188,5 +191,34 @@ func TestHDFSClusterReconciler_ScaleDownAndUpStatefulSet(t *testing.T) {
 	// Assert that the number of replicas is still 3
 	if *sts.Spec.Replicas != 3 {
 		t.Errorf("unexpected number of replicas: got %v want %v", *sts.Spec.Replicas, 3)
+	}
+}
+
+func TestResourceRequirements(t *testing.T) {
+	resources := v1alpha1.Resources{
+		Memory:  "1Gi",
+		Cpu:     "500m",
+		Storage: "10Gi",
+	}
+
+	expected := &v1.ResourceRequirements{
+		Requests: v1.ResourceList{
+			v1.ResourceMemory: resource.MustParse("1Gi"),
+			v1.ResourceCPU:    resource.MustParse("500m"),
+		},
+		Limits: v1.ResourceList{
+			v1.ResourceMemory: resource.MustParse("1Gi"),
+			v1.ResourceCPU:    resource.MustParse("500m"),
+		},
+	}
+
+	result, err := resourceRequirements(resources)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if !reflect.DeepEqual(expected, result) {
+		t.Errorf("Expected %+v, got %+v", expected, result)
 	}
 }

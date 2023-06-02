@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
-	hdfsv1alpha1 "github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,7 +11,6 @@ import (
 )
 
 func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
-
 	coreSite := ""
 	hdfsSite := ""
 	if hdfsCluster.Spec.NameNode.Replicas == 1 {
@@ -142,7 +140,7 @@ func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 //	return true, nil
 //}
 
-func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdfs *hdfsv1alpha1.HDFSCluster) error {
+func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdfs *v1alpha1.HDFSCluster) error {
 	// Define the desired NameNode Service object
 	desiredConfigMap, _ := r.desiredClusterConfigMap(hdfs)
 
