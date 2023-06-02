@@ -285,9 +285,10 @@ func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alp
 							Lifecycle: &corev1.Lifecycle{
 								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
-										Command: []string{"/bin/sh",
+										Command: []string{
+											"/bin/sh",
 											"-c",
-											"if [ ! -d \"$JOURNALNODE_DIR\" ]; then mkdir -p $JOURNALNODE_DIR; chown -R root:root $JOURNALNODE_DIR; chmod 755 $JOURNALNODE_DIR; fi"},
+											"rm -rf $JOURNALNODE_DIR/lost+found"},
 									},
 								},
 							},

@@ -180,9 +180,11 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 							Lifecycle: &corev1.Lifecycle{
 								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
-										Command: []string{"/bin/sh",
+										Command: []string{
+											"/bin/sh",
 											"-c",
-											"if [ ! -d \"$DATA_DIR\" ]; then mkdir -p $DATA_DIR; chown -R root:root $DATA_DIR; chmod 755 $DATA_DIR; fi"},
+											"rm -rf $DATA_DIR/lost+found",
+										},
 									},
 								},
 							},
