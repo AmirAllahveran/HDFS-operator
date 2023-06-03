@@ -167,18 +167,18 @@ func validateNode(h *HDFSCluster) error {
 		return errors.New("invalid DataNode")
 	}
 
-	match = isValid(h.Spec.DataNode, "^[12]$")
+	match = isValid(h.Spec.NameNode, "^[12]$")
 	if !match {
 		return errors.New("invalid NameNode")
 	}
 
 	if h.Spec.NameNode.Replicas == 2 {
-		match := isValid(h.Spec.DataNode, "^[13]$")
+		match := isValid(h.Spec.Zookeeper, "^[13]$")
 		if !match {
 			return errors.New("invalid Zookeeper")
 		}
 
-		match = isValid(h.Spec.DataNode, "^[13]$")
+		match = isValid(h.Spec.JournalNode, "^[13]$")
 		if !match {
 			return errors.New("invalid JournalNode")
 		}
@@ -201,21 +201,17 @@ func isValid(node Node, pattern string) bool {
 }
 
 func validateResources(r *Resources) bool {
-	cpuPattern := `^(\d+(\.\d+)?|\d+m)$`
-	memoryPattern := `^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$`
-	storagePattern := `^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$`
+	pattern := `^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$`
 
-	cpuRegexp := regexp.MustCompile(cpuPattern)
-	memoryRegexp := regexp.MustCompile(memoryPattern)
-	storageRegexp := regexp.MustCompile(storagePattern)
+	compile := regexp.MustCompile(pattern)
 
-	if r.Cpu != "" && !cpuRegexp.MatchString(r.Cpu) {
+	if r.Cpu != "" && !compile.MatchString(r.Cpu) {
 		return false
 	}
-	if r.Memory != "" && !memoryRegexp.MatchString(r.Memory) {
+	if r.Memory != "" && !compile.MatchString(r.Memory) {
 		return false
 	}
-	if !storageRegexp.MatchString(r.Storage) {
+	if !compile.MatchString(r.Storage) {
 		return false
 	}
 	return true
