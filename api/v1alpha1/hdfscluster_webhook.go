@@ -173,12 +173,12 @@ func validateNode(h *HDFSCluster) error {
 	}
 
 	if h.Spec.NameNode.Replicas == 2 {
-		match := isValid(h.Spec.Zookeeper, "^[13]$")
+		match := isValid(*h.Spec.Zookeeper, "^[13]$")
 		if !match {
 			return errors.New("invalid Zookeeper")
 		}
 
-		match = isValid(h.Spec.JournalNode, "^[13]$")
+		match = isValid(*h.Spec.JournalNode, "^[13]$")
 		if !match {
 			return errors.New("invalid JournalNode")
 		}
