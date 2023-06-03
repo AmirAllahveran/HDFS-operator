@@ -69,11 +69,14 @@ type Resources struct {
 // HDFSClusterStatus defines the observed state of HDFSCluster
 type HDFSClusterStatus struct {
 	CreationTime string `json:"creationTime"`
+	ClusterType  string `json:"clusterType"`
 }
 
+//+kubebuilder:resource:shortName="hc"
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+//+kubebuilder:printcolumn:name="ClusterType",type="date",JSONPath=".status.clusterType"
 
 // HDFSCluster is the Schema for the hdfsclusters API
 type HDFSCluster struct {

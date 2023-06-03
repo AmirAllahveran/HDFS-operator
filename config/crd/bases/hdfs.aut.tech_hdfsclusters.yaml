@@ -12,12 +12,17 @@ spec:
     kind: HDFSCluster
     listKind: HDFSClusterList
     plural: hdfsclusters
+    shortNames:
+    - hc
     singular: hdfscluster
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
       name: Age
+      type: date
+    - jsonPath: .status.clusterType
+      name: ClusterType
       type: date
     name: v1alpha1
     schema:
@@ -129,9 +134,12 @@ spec:
           status:
             description: HDFSClusterStatus defines the observed state of HDFSCluster
             properties:
+              clusterType:
+                type: string
               creationTime:
                 type: string
             required:
+            - clusterType
             - creationTime
             type: object
         type: object
