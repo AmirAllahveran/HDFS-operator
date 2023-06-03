@@ -24,16 +24,18 @@ import (
 
 // HDFSClusterSpec defines the desired state of HDFSCluster
 type HDFSClusterSpec struct {
-	ClusterConfig ClusterConfig `json:"clusterConfig,omitempty"`
+	// +kubebuilder:validation:Optional
+	ClusterConfig ClusterConfig `json:"clusterConfig"`
 	NameNode      Node          `json:"nameNode"`
 	DataNode      Node          `json:"dataNode"`
-	JournalNode   Node          `json:"journalNode,omitempty"`
-	Zookeeper     Node          `json:"zookeeper,omitempty"`
+	// +kubebuilder:validation:Optional
+	JournalNode Node `json:"journalNode,omitempty"`
+	// +kubebuilder:validation:Optional
+	Zookeeper Node `json:"zookeeper,omitempty"`
 }
 
 type Node struct {
-	Replicas int `json:"replicas"`
-	// +kubebuilder:validation:Optional
+	Replicas  int       `json:"replicas"`
 	Resources Resources `json:"resources"`
 }
 
@@ -56,12 +58,16 @@ type Node struct {
 //}
 
 type ClusterConfig struct {
+	// +kubebuilder:validation:Optional
 	CoreSite map[string]string `json:"coreSite,omitempty"`
+	// +kubebuilder:validation:Optional
 	HdfsSite map[string]string `json:"hdfsSite,omitempty"`
 }
 
 type Resources struct {
-	Memory  string `json:"memory,omitempty"`
+	// +kubebuilder:validation:Optional
+	Memory string `json:"memory,omitempty"`
+	// +kubebuilder:validation:Optional
 	Cpu     string `json:"cpu,omitempty"`
 	Storage string `json:"storage"`
 }

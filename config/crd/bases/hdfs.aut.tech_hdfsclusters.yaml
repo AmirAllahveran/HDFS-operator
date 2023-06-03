@@ -72,6 +72,7 @@ spec:
                     type: object
                 required:
                 - replicas
+                - resources
                 type: object
               journalNode:
                 properties:
@@ -90,6 +91,7 @@ spec:
                     type: object
                 required:
                 - replicas
+                - resources
                 type: object
               nameNode:
                 properties:
@@ -108,6 +110,7 @@ spec:
                     type: object
                 required:
                 - replicas
+                - resources
                 type: object
               zookeeper:
                 properties:
@@ -126,6 +129,7 @@ spec:
                     type: object
                 required:
                 - replicas
+                - resources
                 type: object
             required:
             - dataNode

@@ -134,7 +134,7 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 		return err
 	}
 	logger.Info("createOrUpdateNameNode", "name", hdfs.Name)
-	err = r.createOrUpdateNameNode(ctx, hdfs)
+	err = r.createOrUpdateNameNode(ctx, hdfs, logger)
 	if err != nil {
 		return err
 	}
