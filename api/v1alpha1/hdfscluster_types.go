@@ -76,7 +76,7 @@ type HDFSClusterStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-//+kubebuilder:printcolumn:name="ClusterType",type="date",JSONPath=".status.clusterType"
+//+kubebuilder:printcolumn:name="ClusterType",type="string",JSONPath=".status.clusterType"
 
 // HDFSCluster is the Schema for the hdfsclusters API
 type HDFSCluster struct {

@@ -24,9 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // HDFSClusterReconciler reconciles a HDFSCluster object
@@ -246,8 +244,8 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 func (r *HDFSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&hdfsv1alpha1.HDFSCluster{}).
-		Watches(&source.Kind{Type: &hdfsv1alpha1.HDFSCluster{}},
-			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &hdfsv1alpha1.HDFSCluster{}}).
+		//Watches(&source.Kind{Type: &appsv1.StatefulSet{}},
+		//	&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &hdfsv1alpha1.HDFSCluster{}}).
 		Complete(r)
 }
 
