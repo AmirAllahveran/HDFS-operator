@@ -139,6 +139,7 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 
 	// Create or update the Service
 	if errors.IsNotFound(err) {
+		logger.Info("Create or update the Service", "line", "142")
 		if err := r.Create(ctx, desiredService); err != nil {
 			logger.Error(err, "err", "line", "143")
 			return err
@@ -160,8 +161,9 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 
 	// Create or update the StatefulSet
 	if errors.IsNotFound(err) {
+		logger.Info("Creating namenode", "line", "164")
 		if err := r.Create(ctx, desiredStatefulSet); err != nil {
-			logger.Error(err, "err", "line", "164")
+			logger.Error(err, "err", "line", "166")
 			return err
 		}
 
@@ -195,6 +197,7 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		//	}
 		//}
 	} else {
+		logger.Info("Updating namenode", "line", "163")
 		if *desiredStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			pvc := &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
@@ -337,7 +340,7 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 	logger.Info("resources", "compute:", hdfsCluster.Spec.NameNode.Resources)
 	compute, _ := resourceRequirements(hdfsCluster.Spec.NameNode.Resources)
 
-	stsTempalte := &appsv1.StatefulSet{
+	stsTemplate := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-namenode",
 			Namespace: hdfsCluster.Namespace,
@@ -488,11 +491,11 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 		},
 	}
 
-	if err := ctrl.SetControllerReference(hdfsCluster, stsTempalte, r.Scheme); err != nil {
-		return stsTempalte, err
+	if err := ctrl.SetControllerReference(hdfsCluster, stsTemplate, r.Scheme); err != nil {
+		return stsTemplate, err
 	}
-
-	return stsTempalte, nil
+	logger.Info("returning sts template")
+	return stsTemplate, nil
 }
 
 func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
