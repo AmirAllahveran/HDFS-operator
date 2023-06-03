@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"net"
+	"net/url"
 	"regexp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -221,22 +221,22 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 
 	var webPort int
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.http-address"]; ok {
-		_, portStr, err := net.SplitHostPort(val)
+		u, err := url.Parse("//" + val)
 		if err != nil {
 			return nil, err
 		}
-		webPort, _ = strconv.Atoi(portStr)
+		webPort, _ = strconv.Atoi(u.Port())
 	} else {
 		webPort = 9870
 	}
 	var defaultPort int
 	if hdfsCluster.Spec.NameNode.Replicas == 1 {
 		if val, ok := hdfsCluster.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; ok {
-			_, portStr, err := net.SplitHostPort(val)
+			u, err := url.Parse(val)
 			if err != nil {
 				return nil, err
 			}
-			defaultPort, _ = strconv.Atoi(portStr)
+			defaultPort, _ = strconv.Atoi(u.Port())
 		} else {
 			defaultPort = 8020
 		}
@@ -252,11 +252,11 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 			}
 		}
 		if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite[key]; ok {
-			_, portStr, err := net.SplitHostPort(val)
+			u, err := url.Parse("//" + val)
 			if err != nil {
 				return nil, err
 			}
-			defaultPort, _ = strconv.Atoi(portStr)
+			defaultPort, _ = strconv.Atoi(u.Port())
 		} else {
 			defaultPort = 8020
 		}
@@ -306,12 +306,12 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 	var webPort int
 	logger.Info("Setting webPort")
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.http-address"]; ok {
-		_, portStr, err := net.SplitHostPort(val)
+		u, err := url.Parse("//" + val)
 		if err != nil {
 			logger.Error(err, "line", "310")
 			return nil, err
 		}
-		webPort, _ = strconv.Atoi(portStr)
+		webPort, _ = strconv.Atoi(u.Port())
 	} else {
 		webPort = 9870
 	}
@@ -325,12 +325,11 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 	logger.Info("Setting defaultPort")
 	var defaultPort int
 	if val, ok := hdfsCluster.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; ok {
-		_, portStr, err := net.SplitHostPort(val)
+		u, err := url.Parse(val)
 		if err != nil {
-			logger.Error(err, "line", "330")
 			return nil, err
 		}
-		defaultPort, _ = strconv.Atoi(portStr)
+		defaultPort, _ = strconv.Atoi(u.Port())
 	} else {
 		defaultPort = 8020
 	}
@@ -499,11 +498,11 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
 	var webPort int
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.http-address"]; ok {
-		_, portStr, err := net.SplitHostPort(val)
+		u, err := url.Parse("//" + val)
 		if err != nil {
 			return nil, err
 		}
-		webPort, _ = strconv.Atoi(portStr)
+		webPort, _ = strconv.Atoi(u.Port())
 	} else {
 		webPort = 9870
 	}
@@ -515,36 +514,25 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 	}
 
 	var defaultPort int
-	if hdfsCluster.Spec.NameNode.Replicas == 1 {
-		if val, ok := hdfsCluster.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; ok {
-			_, portStr, err := net.SplitHostPort(val)
-			if err != nil {
-				return nil, err
-			}
-			defaultPort, _ = strconv.Atoi(portStr)
-		} else {
-			defaultPort = 8020
+
+	// Compile your regex
+	var key string
+	re, _ := regexp.Compile(`dfs.namenode.rpc-address\..+`)
+	// Iteration over the map
+	for k, _ := range hdfsCluster.Spec.ClusterConfig.HdfsSite {
+		if re.MatchString(k) {
+			key = k
+			break
 		}
+	}
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite[key]; ok {
+		u, err := url.Parse("//" + val)
+		if err != nil {
+			return nil, err
+		}
+		defaultPort, _ = strconv.Atoi(u.Port())
 	} else {
-		// Compile your regex
-		var key string
-		re, _ := regexp.Compile(`dfs.namenode.rpc-address\..+`)
-		// Iteration over the map
-		for k, _ := range hdfsCluster.Spec.ClusterConfig.HdfsSite {
-			if re.MatchString(k) {
-				key = k
-				break
-			}
-		}
-		if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite[key]; ok {
-			_, portStr, err := net.SplitHostPort(val)
-			if err != nil {
-				return nil, err
-			}
-			defaultPort, _ = strconv.Atoi(portStr)
-		} else {
-			defaultPort = 8020
-		}
+		defaultPort = 8020
 	}
 
 	compute, _ := resourceRequirements(hdfsCluster.Spec.NameNode.Resources)

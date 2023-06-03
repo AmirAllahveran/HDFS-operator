@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"net"
+	"net/url"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
@@ -49,22 +49,22 @@ func (r *HDFSClusterReconciler) desiredJournalNodeService(hdfsCluster *v1alpha1.
 
 	var httpPort int
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.journalnode.http-address"]; ok {
-		_, portStr, err := net.SplitHostPort(val)
+		u, err := url.Parse("//" + val)
 		if err != nil {
 			return nil, err
 		}
-		httpPort, _ = strconv.Atoi(portStr)
+		httpPort, _ = strconv.Atoi(u.Port())
 	} else {
 		httpPort = 8480
 	}
 
 	var rpcPort int
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.journalnode.rpc-address"]; ok {
-		_, portStr, err := net.SplitHostPort(val)
+		u, err := url.Parse("//" + val)
 		if err != nil {
 			return nil, err
 		}
-		rpcPort, _ = strconv.Atoi(portStr)
+		rpcPort, _ = strconv.Atoi(u.Port())
 	} else {
 		rpcPort = 8485
 	}
@@ -184,22 +184,22 @@ func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alp
 
 	var httpPort int
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.journalnode.http-address"]; ok {
-		_, portStr, err := net.SplitHostPort(val)
+		u, err := url.Parse("//" + val)
 		if err != nil {
 			return nil, err
 		}
-		httpPort, _ = strconv.Atoi(portStr)
+		httpPort, _ = strconv.Atoi(u.Port())
 	} else {
 		httpPort = 8480
 	}
 
 	var rpcPort int
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.journalnode.rpc-address"]; ok {
-		_, portStr, err := net.SplitHostPort(val)
+		u, err := url.Parse("//" + val)
 		if err != nil {
 			return nil, err
 		}
-		rpcPort, _ = strconv.Atoi(portStr)
+		rpcPort, _ = strconv.Atoi(u.Port())
 	} else {
 		rpcPort = 8485
 	}
