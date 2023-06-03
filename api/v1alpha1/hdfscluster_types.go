@@ -29,9 +29,9 @@ type HDFSClusterSpec struct {
 	NameNode      Node          `json:"nameNode"`
 	DataNode      Node          `json:"dataNode"`
 	// +kubebuilder:validation:Optional
-	JournalNode Node `json:"journalNode,omitempty"`
+	JournalNode *Node `json:"journalNode,omitempty"`
 	// +kubebuilder:validation:Optional
-	Zookeeper Node `json:"zookeeper,omitempty"`
+	Zookeeper *Node `json:"zookeeper,omitempty"`
 }
 
 type Node struct {
