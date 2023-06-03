@@ -304,26 +304,30 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster, logger logr.Logger) (*appsv1.StatefulSet, error) {
 	logger.Info("Creating desiredSingleNameNodeStatefulSet")
 	var webPort int
+	logger.Info("Setting webPort")
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.http-address"]; ok {
 		_, portStr, err := net.SplitHostPort(val)
 		if err != nil {
+			logger.Error(err, "line", "310")
 			return nil, err
 		}
 		webPort, _ = strconv.Atoi(portStr)
 	} else {
 		webPort = 9870
 	}
+	logger.Info("Setting namenodeDataDir")
 	var namenodeDataDir string
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.data.dir"]; ok {
 		namenodeDataDir = val
 	} else {
 		namenodeDataDir = "/data/hadoop/namenode"
 	}
-
+	logger.Info("Setting defaultPort")
 	var defaultPort int
 	if val, ok := hdfsCluster.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; ok {
 		_, portStr, err := net.SplitHostPort(val)
 		if err != nil {
+			logger.Error(err, "line", "330")
 			return nil, err
 		}
 		defaultPort, _ = strconv.Atoi(portStr)

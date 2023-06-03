@@ -32,3 +32,12 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/hdfs-operator:${{ steps.slug.outputs.commit-hash-short }}
+
+      - name: Set up Kubernetes context
+        uses: azure/k8s-set-context@v1
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl --namespace hdfs-operator-system set image deployment/hdfs-operator-controller-manager manager=${{ secrets.DOCKERHUB_USERNAME }}/hdfs-operator:${{ steps.slug.outputs.commit-hash-short }}
