@@ -23,7 +23,7 @@ spec:
       type: date
     - jsonPath: .status.clusterType
       name: ClusterType
-      type: date
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
