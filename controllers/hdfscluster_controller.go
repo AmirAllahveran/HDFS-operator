@@ -24,13 +24,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // HDFSClusterReconciler reconciles a HDFSCluster object
@@ -250,32 +246,32 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 func (r *HDFSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&hdfsv1alpha1.HDFSCluster{}).
-		Watches(&source.Kind{Type: &hdfsv1alpha1.HDFSCluster{}},
-			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &hdfsv1alpha1.HDFSCluster{}}).
+		//Watches(&source.Kind{Type: &hdfsv1alpha1.HDFSCluster{}},
+		//	&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &hdfsv1alpha1.HDFSCluster{}}).
 		Owns(&appsv1.Deployment{}).
-		Watches(
-			&source.Kind{Type: &appsv1.Deployment{}},
-			handler.EnqueueRequestsFromMapFunc(r.getHCForChildObject)).
+		//Watches(
+		//	&source.Kind{Type: &appsv1.Deployment{}},
+		//	handler.EnqueueRequestsFromMapFunc(r.getHCForChildObject)).
 		Owns(&appsv1.StatefulSet{}).
-		Watches(
-			&source.Kind{Type: &appsv1.StatefulSet{}},
-			handler.EnqueueRequestsFromMapFunc(r.getHCForChildObject)).
+		//Watches(
+		//	&source.Kind{Type: &appsv1.StatefulSet{}},
+		//	handler.EnqueueRequestsFromMapFunc(r.getHCForChildObject)).
 		Owns(&corev1.ConfigMap{}).
-		Watches(
-			&source.Kind{Type: &corev1.ConfigMap{}},
-			handler.EnqueueRequestsFromMapFunc(r.getHCForChildObject)).
+		//Watches(
+		//	&source.Kind{Type: &corev1.ConfigMap{}},
+		//	handler.EnqueueRequestsFromMapFunc(r.getHCForChildObject)).
 		Owns(&corev1.PersistentVolumeClaim{}).
-		Watches(
-			&source.Kind{Type: &corev1.PersistentVolumeClaim{}},
-			handler.EnqueueRequestsFromMapFunc(r.getHCForChildObject)).
+		//Watches(
+		//	&source.Kind{Type: &corev1.PersistentVolumeClaim{}},
+		//	handler.EnqueueRequestsFromMapFunc(r.getHCForChildObject)).
 		Complete(r)
 }
 
-func (r *HDFSClusterReconciler) getHCForChildObject(workload client.Object) []reconcile.Request {
-	requests := []reconcile.Request{{
-		NamespacedName: types.NamespacedName{
-			Name:      workload.GetName(),
-			Namespace: workload.GetNamespace(),
-		}}}
-	return requests
-}
+//func (r *HDFSClusterReconciler) getHCForChildObject(workload client.Object) []reconcile.Request {
+//	requests := []reconcile.Request{{
+//		NamespacedName: types.NamespacedName{
+//			Name:      workload.GetName(),
+//			Namespace: workload.GetNamespace(),
+//		}}}
+//	return requests
+//}

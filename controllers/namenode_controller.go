@@ -92,14 +92,14 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 
 	desiredStatefulSet := &appsv1.StatefulSet{}
 	if hdfsCluster.Spec.NameNode.Replicas == 1 {
-		hdfsCluster.Status.ClusterType = "Single NameNode"
+		hdfsCluster.Status.ClusterType = "Single"
 		errStatus := r.Status().Update(ctx, hdfsCluster)
 		if errStatus != nil {
 			return errStatus
 		}
 		desiredStatefulSet, _ = r.desiredSingleNameNodeStatefulSet(hdfsCluster)
 	} else {
-		hdfsCluster.Status.ClusterType = "HighAvailable NameNode"
+		hdfsCluster.Status.ClusterType = "HighAvailable"
 		errStatus := r.Status().Update(ctx, hdfsCluster)
 		if errStatus != nil {
 			return errStatus
