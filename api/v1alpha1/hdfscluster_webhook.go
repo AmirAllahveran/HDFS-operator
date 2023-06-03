@@ -42,6 +42,12 @@ var _ webhook.Defaulter = &HDFSCluster{}
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (h *HDFSCluster) Default() {
 	hdfsclusterlog.Info("default", "name", h.Name)
+	if h.Spec.ClusterConfig.CoreSite == nil {
+		h.Spec.ClusterConfig.CoreSite = make(map[string]string)
+	}
+	if h.Spec.ClusterConfig.HdfsSite == nil {
+		h.Spec.ClusterConfig.HdfsSite = make(map[string]string)
+	}
 	if h.Spec.NameNode.Replicas == 1 {
 		if _, ok := h.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; !ok {
 			h.Spec.ClusterConfig.CoreSite["fs.defaultFS"] = "hdfs://" + h.Name + "-namenode." +
@@ -155,6 +161,31 @@ func (h *HDFSCluster) ValidateDelete() error {
 	return nil
 }
 
+func validateNode(h *HDFSCluster) error {
+	match := isValid(h.Spec.DataNode, "^[123]$")
+	if !match {
+		return errors.New("invalid DataNode")
+	}
+
+	match = isValid(h.Spec.DataNode, "^[12]$")
+	if !match {
+		return errors.New("invalid NameNode")
+	}
+
+	if h.Spec.NameNode.Replicas == 2 {
+		match := isValid(h.Spec.DataNode, "^[13]$")
+		if !match {
+			return errors.New("invalid Zookeeper")
+		}
+
+		match = isValid(h.Spec.DataNode, "^[13]$")
+		if !match {
+			return errors.New("invalid JournalNode")
+		}
+	}
+	return nil
+}
+
 func isValid(node Node, pattern string) bool {
 	// Convert the number to a string
 	strNum := strconv.Itoa(node.Replicas)
@@ -169,44 +200,19 @@ func isValid(node Node, pattern string) bool {
 	return isMatch && isValid
 }
 
-func validateNode(h *HDFSCluster) error {
-	match := isValid(h.Spec.DataNode, "^[123]$")
-	if !match {
-		return errors.New("invalid Datanode Replica count. It should be valid in this regex ^[123]$")
-	}
-
-	match = isValid(h.Spec.DataNode, "^[12]$")
-	if !match {
-		return errors.New("invalid Namenode Replica count. It should be valid in this regex ^[12]$")
-	}
-
-	if h.Spec.NameNode.Replicas == 2 {
-		match := isValid(h.Spec.DataNode, "^[13]$")
-		if !match {
-			return errors.New("invalid Zookeeper Replica count. It should be valid in this regex ^[123]$")
-		}
-
-		match = isValid(h.Spec.DataNode, "^[13]$")
-		if !match {
-			return errors.New("invalid JournalNode Replica count. It should be valid in this regex ^[123]$")
-		}
-	}
-	return nil
-}
-
 func validateResources(r *Resources) bool {
 	cpuPattern := `^(\d+(\.\d+)?|\d+m)$`
-	memoryPattern := `^(\d+(Ei|Pi|Ti|Gi|Mi|Ki))$`
-	storagePattern := memoryPattern // Assuming Storage follows the same pattern as Memory.
+	memoryPattern := `^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$`
+	storagePattern := `^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$`
 
 	cpuRegexp := regexp.MustCompile(cpuPattern)
 	memoryRegexp := regexp.MustCompile(memoryPattern)
 	storageRegexp := regexp.MustCompile(storagePattern)
 
-	if !cpuRegexp.MatchString(r.Cpu) {
+	if r.Cpu != "" && !cpuRegexp.MatchString(r.Cpu) {
 		return false
 	}
-	if !memoryRegexp.MatchString(r.Memory) {
+	if r.Memory != "" && !memoryRegexp.MatchString(r.Memory) {
 		return false
 	}
 	if !storageRegexp.MatchString(r.Storage) {
