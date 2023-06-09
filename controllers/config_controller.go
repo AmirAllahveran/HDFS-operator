@@ -167,10 +167,22 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 			return err
 		}
 		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace)
+		if err != nil{
+			return err
+		}
 		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace)
+		if err != nil{
+			return err
+		}
 		err = r.ScaleDownAndUpDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace)
+		if err != nil{
+			return err
+		}
 		if hdfs.Spec.NameNode.Replicas == 2 {
 			err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-journalnode", hdfs.Namespace)
+			if err != nil{
+				return err
+			}
 		}
 	}
 

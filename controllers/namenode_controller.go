@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -86,27 +85,23 @@ hdfs namenode`,
 	return configMapTemplate, nil
 }
 
-func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster, logger logr.Logger) error {
+func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster) error {
 	// Define the desired NameNode Service object
 	desiredService, _ := r.desiredNameNodeService(hdfsCluster)
 	// Define the desired NameNode StatefulSet object
 
 	desiredStatefulSet := &appsv1.StatefulSet{}
 	if hdfsCluster.Spec.NameNode.Replicas == 1 {
-		logger.Info("Creating Single NameNode")
 		hdfsCluster.Status.ClusterType = "Single"
 		errStatus := r.Status().Update(ctx, hdfsCluster)
 		if errStatus != nil {
-			logger.Error(errStatus, "err status", "line", "100")
 			return errStatus
 		}
-		desiredStatefulSet, _ = r.desiredSingleNameNodeStatefulSet(hdfsCluster, logger)
+		desiredStatefulSet, _ = r.desiredSingleNameNodeStatefulSet(hdfsCluster)
 	} else {
-		logger.Info("Creating HighAvailable NameNode")
 		hdfsCluster.Status.ClusterType = "HighAvailable"
 		errStatus := r.Status().Update(ctx, hdfsCluster)
 		if errStatus != nil {
-			logger.Error(errStatus, "err status", "line", "109")
 			return errStatus
 		}
 		desiredConfigMap, _ := r.desiredHANameNodeConfigMap(hdfsCluster)
@@ -116,14 +111,12 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		existingConfigMap := &corev1.ConfigMap{}
 		err := r.Get(ctx, client.ObjectKeyFromObject(desiredConfigMap), existingConfigMap)
 		if err != nil && !errors.IsNotFound(err) {
-			logger.Error(err, "err", "line", "119")
 			return err
 		}
 
 		// Create or update the ConfigMap
 		if errors.IsNotFound(err) {
 			if err := r.Create(ctx, desiredConfigMap); err != nil {
-				logger.Error(err, "err", "line", "126")
 				return err
 			}
 		}
@@ -133,15 +126,12 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 	existingService := &corev1.Service{}
 	err := r.Get(ctx, client.ObjectKeyFromObject(desiredService), existingService)
 	if err != nil && !errors.IsNotFound(err) {
-		logger.Error(err, "err", "line", "136")
 		return err
 	}
 
 	// Create or update the Service
 	if errors.IsNotFound(err) {
-		logger.Info("Create or update the Service", "line", "142")
 		if err := r.Create(ctx, desiredService); err != nil {
-			logger.Error(err, "err", "line", "143")
 			return err
 		}
 		//} else {
@@ -155,15 +145,12 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 	existingStatefulSet := &appsv1.StatefulSet{}
 	err = r.Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet), existingStatefulSet)
 	if err != nil && !errors.IsNotFound(err) {
-		logger.Error(err, "err", "line", "157")
 		return err
 	}
 
 	// Create or update the StatefulSet
 	if errors.IsNotFound(err) {
-		logger.Info("Creating namenode", "line", "164")
 		if err := r.Create(ctx, desiredStatefulSet); err != nil {
-			logger.Error(err, "err", "line", "166")
 			return err
 		}
 
@@ -197,7 +184,6 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		//	}
 		//}
 	} else {
-		logger.Info("Updating namenode", "line", "163")
 		if *desiredStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			pvc := &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
@@ -304,28 +290,24 @@ func (r *HDFSClusterReconciler) desiredNameNodeService(hdfsCluster *v1alpha1.HDF
 	return svcTemplate, nil
 }
 
-func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster, logger logr.Logger) (*appsv1.StatefulSet, error) {
-	logger.Info("Creating desiredSingleNameNodeStatefulSet")
+func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
 	var webPort int
-	logger.Info("Setting webPort")
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.http-address"]; ok {
 		u, err := url.Parse("//" + val)
 		if err != nil {
-			logger.Error(err, "err", "line", "310")
 			return nil, err
 		}
 		webPort, _ = strconv.Atoi(u.Port())
 	} else {
 		webPort = 9870
 	}
-	logger.Info("Setting namenodeDataDir")
 	var namenodeDataDir string
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.data.dir"]; ok {
 		namenodeDataDir = val
 	} else {
 		namenodeDataDir = "/data/hadoop/namenode"
 	}
-	logger.Info("Setting defaultPort")
+
 	var defaultPort int
 	if val, ok := hdfsCluster.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; ok {
 		u, err := url.Parse(val)
@@ -337,7 +319,6 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 		defaultPort = 8020
 	}
 
-	logger.Info("resources", "compute:", hdfsCluster.Spec.NameNode.Resources)
 	compute, _ := resourceRequirements(hdfsCluster.Spec.NameNode.Resources)
 
 	stsTemplate := &appsv1.StatefulSet{
@@ -494,7 +475,6 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 	if err := ctrl.SetControllerReference(hdfsCluster, stsTemplate, r.Scheme); err != nil {
 		return stsTemplate, err
 	}
-	logger.Info("returning sts template")
 	return stsTemplate, nil
 }
 

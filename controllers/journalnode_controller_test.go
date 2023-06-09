@@ -29,7 +29,7 @@ func TestDesiredJournalNode(t *testing.T) {
 			NameNode: v1alpha1.Node{
 				Replicas: 2,
 			},
-			JournalNode: v1alpha1.Node{
+			JournalNode: &v1alpha1.Node{
 				Replicas: 3,
 			},
 		},
@@ -93,7 +93,7 @@ func TestHDFSClusterReconciler_desiredJournalNodeService(t *testing.T) {
 					Storage: "1Gi",
 				},
 			},
-			JournalNode: v1alpha1.Node{
+			JournalNode: &v1alpha1.Node{
 				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "1Gi",
@@ -160,7 +160,7 @@ func TestHDFSClusterReconciler_createOrUpdateJournalNode(t *testing.T) {
 					Storage: "10Gi",
 				},
 			},
-			JournalNode: v1alpha1.Node{
+			JournalNode: &v1alpha1.Node{
 				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "3G",
@@ -210,7 +210,7 @@ func TestHDFSClusterReconciler_desiredJournalNodeStatefulSet(t *testing.T) {
 			Namespace: "testNamespace",
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
-			JournalNode: v1alpha1.Node{
+			JournalNode: &v1alpha1.Node{
 				Replicas: 3,
 				Resources: v1alpha1.Resources{
 					Storage: "10Gi",
