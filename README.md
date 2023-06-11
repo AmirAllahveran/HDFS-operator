@@ -101,3 +101,18 @@ kubebuilder create webhook --group hdfs --version v1alpha1 --kind HDFSCluster --
 ```
 
 
+### Useful commands
+```bash
+# get cluster status (data nodes)
+hdfs dfsadmin -report
+# get name node status 
+hdfs haadmin -getServiceState nn0
+# run Map-Reduce
+apt update && apt install wget
+wget https://hadoop.s3.ir-thr-at1.arvanstorage.ir/WordCount-1.0-SNAPSHOT.jar
+hadoop fs -mkdir /input
+hadoop fs -put input.txt /input
+hadoop jar WordCount-1.0-SNAPSHOT.jar org.codewitharjun.WC_Runner /input/input.txt /output
+hadoop fs -ls /output
+hadoop fs -cat /output/part-00000
+```
