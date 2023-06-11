@@ -1,8 +1,9 @@
-# hdfs-operator
-// TODO(user): Add simple overview of use/purpose
+# HDFS operator
+The HDFS Operator is used to set up HFDS in high-availability and single mode
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Our problem is to design and implement a Kubernetes HDFS Operator capable of automating the process of creating, updating, and deleting HDFS clusters within a Kubernetes environment. This operator must ensure that the HDFS clusters are efficiently managed, highly available, and recoverable from failures while respecting resource constraints within the Kubernetes ecosystem.
+
 
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.

@@ -2,6 +2,10 @@ name: Build and Push
 
 on:
   push:
+    paths-ignore:
+      - '.github/**'
+      - 'config/samples/**'
+      - 'README.md'
     branches:
       - master
 
