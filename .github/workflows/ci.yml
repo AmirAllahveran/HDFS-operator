@@ -5,6 +5,8 @@ on:
     paths-ignore:
       - '.github/**'
       - 'config/samples/**'
+      - 'config/rbac/**'
+      - 'config/manager/**'
       - 'README.md'
     branches:
       - master

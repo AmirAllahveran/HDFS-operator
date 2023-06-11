@@ -5,4 +5,4 @@ kind: Kustomization
 images:
   - name: controller
     newName: amiralh4/hdfs-operator
-    newTag: 3f9c9af
+    newTag: 5f702b3
