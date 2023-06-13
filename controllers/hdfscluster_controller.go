@@ -124,7 +124,7 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 		return err
 	}
 	logger.Info("createHadoop", "name", hdfs.Name)
-	err = r.createHadoop(ctx, hdfs)
+	err = r.createHadoop(ctx, hdfs, logger)
 	if err != nil {
 		return err
 	}
