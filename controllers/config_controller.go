@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
@@ -167,6 +168,7 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 			}
 			if errors.IsNotFound(err) {
 				logger.Info("waiting to create cluster config ...")
+				time.Sleep(100 * time.Millisecond)
 			} else {
 				break
 			}
@@ -178,20 +180,26 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		//}
 	} else if desiredConfigMap.Data["hdfs-site.xml"] != existingConfigMap.Data["hdfs-site.xml"] ||
 		desiredConfigMap.Data["core-site.xml"] != existingConfigMap.Data["core-site.xml"] {
+		logger.Info("Updating configmap")
+
 		existingConfigMap.Data = desiredConfigMap.Data
 		if err := r.Update(ctx, existingConfigMap); err != nil {
+			logger.Info("Updating configmap 187")
 			return err
 		}
 		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace)
 		if err != nil {
+			logger.Info("ScaleDownAndUpStatefulSet datanode")
 			return err
 		}
 		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace)
 		if err != nil {
+			logger.Info("ScaleDownAndUpStatefulSet namenode")
 			return err
 		}
 		err = r.ScaleDownAndUpDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace)
 		if err != nil {
+			logger.Info("ScaleDownAndUpDeployment hadoop")
 			return err
 		}
 		if hdfs.Spec.NameNode.Replicas == 2 {

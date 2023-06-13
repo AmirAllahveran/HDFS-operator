@@ -117,14 +117,14 @@ func (r *HDFSClusterReconciler) createHadoop(ctx context.Context, hdfs *v1alpha1
 	// Check if the hadoop already exists
 	existingDeployment := &appsv1.Deployment{}
 	err := r.Get(ctx, client.ObjectKeyFromObject(desiredHadoopDeployment), existingDeployment)
-	logger.Info(existingDeployment.Name + "---" + existingDeployment.Namespace)
+	//logger.Info(existingDeployment.Name + "---" + existingDeployment.Namespace)
 	if err != nil && !errors.IsNotFound(err) {
-		logger.Info("err != nil && !errors.IsNotFound(err)")
+		//logger.Info("err != nil && !errors.IsNotFound(err)")
 		return err
 	}
 	// Create Service
 	if errors.IsNotFound(err) {
-
+		logger.Info("creating hadoop")
 		if err := r.Create(ctx, desiredHadoopDeployment); err != nil {
 			return err
 		}
@@ -136,7 +136,8 @@ func (r *HDFSClusterReconciler) createHadoop(ctx context.Context, hdfs *v1alpha1
 				return err
 			}
 			if errors.IsNotFound(err) {
-				logger.Info("waiting to create hadoop ...")
+				//logger.Info("waiting to create hadoop ...")
+				time.Sleep(100 * time.Millisecond)
 			} else {
 				break
 			}
