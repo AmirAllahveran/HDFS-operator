@@ -2,6 +2,9 @@ package controllers
 
 import (
 	"context"
+	"strconv"
+	"time"
+
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -11,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 func (r *HDFSClusterReconciler) desiredZookeeperConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
@@ -420,6 +422,7 @@ func (r *HDFSClusterReconciler) createOrUpdateZookeeper(ctx context.Context, hdf
 		if err := r.Create(ctx, desiredZookeeperStatefulSet); err != nil {
 			return err
 		}
+		time.Sleep(5 * time.Second)
 	} else {
 		if *desiredZookeeperStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			for i := *desiredZookeeperStatefulSet.Spec.Replicas; i < *existingStatefulSet.Spec.Replicas; i++ {

@@ -2,6 +2,10 @@ package controllers
 
 import (
 	"context"
+	"net/url"
+	"strconv"
+	"time"
+
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -10,10 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"net/url"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 func (r *HDFSClusterReconciler) desiredJournalNodePodDisruptionBudget(hdfs *v1alpha1.HDFSCluster) (*v1.PodDisruptionBudget, error) {
@@ -155,6 +157,7 @@ func (r *HDFSClusterReconciler) createOrUpdateJournalNode(ctx context.Context, h
 		if err := r.Create(ctx, desiredJournalNodeStatefulSet); err != nil {
 			return err
 		}
+		time.Sleep(5 * time.Second)
 	} else {
 		if *desiredJournalNodeStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			for i := *desiredJournalNodeStatefulSet.Spec.Replicas; i < *existingStatefulSet.Spec.Replicas; i++ {

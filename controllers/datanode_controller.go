@@ -2,6 +2,9 @@ package controllers
 
 import (
 	"context"
+	"strconv"
+	"time"
+
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -10,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 // DesiredDataNodeConfigMap
@@ -384,6 +386,7 @@ func (r *HDFSClusterReconciler) createOrUpdateDataNode(ctx context.Context, hdfs
 		if err := r.Create(ctx, desiredDataNodeStatefulSet); err != nil {
 			return err
 		}
+		time.Sleep(5 * time.Second)
 		//replica, _ := strconv.Atoi(hdfs.Spec.DataNode.Replicas)
 		//for i := 0; i < replica; i++ {
 		//	pvc := &corev1.PersistentVolumeClaim{}

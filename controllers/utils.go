@@ -2,13 +2,15 @@ package controllers
 
 import (
 	"context"
+	"strconv"
+	"time"
+
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	"github.com/go-xmlfmt/xmlfmt"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 func stringToInt32(s string) *int32 {
@@ -37,7 +39,7 @@ func (r *HDFSClusterReconciler) ScaleDownAndUpStatefulSet(ctx context.Context, n
 	// Scale down to zero
 	zero := int32(0)
 	existingStatefulSet.Spec.Replicas = &zero
-
+	time.Sleep(5 * time.Second)
 	// Update the StatefulSet with the new replica count
 	if err := r.Update(ctx, existingStatefulSet); err != nil {
 		return err
@@ -74,7 +76,7 @@ func (r *HDFSClusterReconciler) ScaleDownAndUpDeployment(ctx context.Context, na
 	if err := r.Update(ctx, existingDeployment); err != nil {
 		return err
 	}
-
+	time.Sleep(5 * time.Second)
 	// Scale back up to the original count
 	existingDeployment.Spec.Replicas = &originalReplicaCount
 	// Update the StatefulSet with the new replica count
