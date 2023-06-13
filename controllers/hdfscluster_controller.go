@@ -85,7 +85,7 @@ func (r *HDFSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	requestName := requestArray[1]
 
 	if requestName == hdfs.Name {
-		logger.Info("create Or Update Components")
+		//logger.Info("create Or Update Components")
 		err = r.createOrUpdateComponents(ctx, &hdfs, logger)
 		if err != nil {
 			return ctrl.Result{}, err
@@ -97,35 +97,36 @@ func (r *HDFSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hdfs *hdfsv1alpha1.HDFSCluster, logger logr.Logger) error {
 	if hdfs.Spec.NameNode.Replicas == 2 {
-		logger.Info("createOrUpdateJournalNode", "name", hdfs.Name)
+		//logger.Info("createOrUpdateJournalNode", "name", hdfs.Name)
 		err := r.createOrUpdateJournalNode(ctx, hdfs)
 		if err != nil {
 			return err
 		}
-		logger.Info("createOrUpdateZookeeper", "name", hdfs.Name)
+		//logger.Info("createOrUpdateZookeeper", "name", hdfs.Name)
 		err = r.createOrUpdateZookeeper(ctx, hdfs)
 		if err != nil {
 			return err
 		}
 	}
-	logger.Info("createOrUpdateConfigmap", "name", hdfs.Name)
+	//logger.Info("createOrUpdateConfigmap", "name", hdfs.Name)
 	err := r.createOrUpdateConfigmap(ctx, hdfs)
 	if err != nil {
 		return err
 	}
-	logger.Info("createOrUpdateNameNode", "name", hdfs.Name)
+	//logger.Info("createOrUpdateNameNode", "name", hdfs.Name)
 	err = r.createOrUpdateNameNode(ctx, hdfs)
 	if err != nil {
 		return err
 	}
-	logger.Info("createOrUpdateDataNode", "name", hdfs.Name)
+	//logger.Info("createOrUpdateDataNode", "name", hdfs.Name)
 	err = r.createOrUpdateDataNode(ctx, hdfs)
 	if err != nil {
 		return err
 	}
-	logger.Info("createHadoop", "name", hdfs.Name)
+	//logger.Info("createHadoop", "name", hdfs.Name)
 	err = r.createHadoop(ctx, hdfs, logger)
 	if err != nil {
+		logger.Error(err, "createHadoop", "name", hdfs.Name)
 		return err
 	}
 
