@@ -110,3 +110,33 @@ func resourceRequirements(resources v1alpha1.Resources) (*v1.ResourceRequirement
 
 	return &req, nil
 }
+
+func stringEqual(s1, s2 string) bool {
+	runeMap := make(map[rune]bool)
+	for _, char := range s1 {
+		runeMap[char] = true
+	}
+
+	for _, char := range s2 {
+		if !runeMap[char] {
+			return false
+		}
+	}
+
+	return true
+}
+func stringDiff(s1, s2 string) string {
+	runeMap := make(map[rune]bool)
+	for _, char := range s2 {
+		runeMap[char] = true
+	}
+
+	diff := ""
+	for _, char := range s1 {
+		if !runeMap[char] {
+			diff += string(char)
+		}
+	}
+
+	return diff
+}

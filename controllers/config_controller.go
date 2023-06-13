@@ -178,10 +178,17 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		//if errStatus != nil {
 		//	return errStatus
 		//}
-	} else if desiredConfigMap.Data["hdfs-site.xml"] != existingConfigMap.Data["hdfs-site.xml"] ||
-		desiredConfigMap.Data["core-site.xml"] != existingConfigMap.Data["core-site.xml"] {
+	} else if stringEqual(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]) ||
+		stringEqual(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) {
 		logger.Info("Updating configmap")
-
+		if stringEqual(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]) {
+			logger.Info("hdfs-site.xml")
+			logger.Info(stringDiff(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]))
+		}
+		if stringEqual(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) {
+			logger.Info("core-site.xml")
+			logger.Info(stringDiff(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]))
+		}
 		existingConfigMap.Data = desiredConfigMap.Data
 		if err := r.Update(ctx, existingConfigMap); err != nil {
 			logger.Info("Updating configmap 187")
