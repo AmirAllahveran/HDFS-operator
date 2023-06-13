@@ -110,7 +110,7 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 		}
 	}
 	//logger.Info("createOrUpdateConfigmap", "name", hdfs.Name)
-	err := r.createOrUpdateConfigmap(ctx, hdfs)
+	err := r.createOrUpdateConfigmap(ctx, hdfs, logger)
 	if err != nil {
 		logger.Info("Error occurred during createOrUpdateConfigmap")
 		return err

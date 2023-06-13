@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -140,7 +141,7 @@ func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 //	return true, nil
 //}
 
-func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdfs *v1alpha1.HDFSCluster) error {
+func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdfs *v1alpha1.HDFSCluster, logger logr.Logger) error {
 	// Define the desired NameNode Service object
 	desiredConfigMap, _ := r.desiredClusterConfigMap(hdfs)
 
@@ -148,13 +149,27 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 	existingConfigMap := &corev1.ConfigMap{}
 	err := r.Get(ctx, client.ObjectKeyFromObject(desiredConfigMap), existingConfigMap)
 	if err != nil && !errors.IsNotFound(err) {
+		logger.Error(err, "Error occurred during Get configmap")
 		return err
 	}
 
 	// Create or update the Service
 	if errors.IsNotFound(err) {
 		if err := r.Create(ctx, desiredConfigMap); err != nil {
+			logger.Error(err, "Error occurred during Create configmap")
 			return err
+		}
+		for {
+			existingConfigMap := &corev1.ConfigMap{}
+			err := r.Get(ctx, client.ObjectKeyFromObject(desiredConfigMap), existingConfigMap)
+			if err != nil && !errors.IsNotFound(err) {
+				return err
+			}
+			if errors.IsNotFound(err) {
+				logger.Info("waiting to create cluster config ...")
+			} else {
+				break
+			}
 		}
 		//hdfs.Status.CreationTime = time.Now().String()
 		//errStatus := r.Status().Update(ctx, hdfs)
