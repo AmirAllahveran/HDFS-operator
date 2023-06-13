@@ -412,7 +412,8 @@ func (r *HDFSClusterReconciler) createOrUpdateDataNode(ctx context.Context, hdfs
 		//		return err
 		//	}
 		//}
-	} else {
+	} else if existingStatefulSet.Spec.Replicas != desiredDataNodeStatefulSet.Spec.Replicas ||
+		&existingStatefulSet.Spec.Template.Spec.Containers[0].Resources != &desiredDataNodeStatefulSet.Spec.Template.Spec.Containers[0].Resources {
 		if *desiredDataNodeStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			for i := *desiredDataNodeStatefulSet.Spec.Replicas; i < *existingStatefulSet.Spec.Replicas; i++ {
 				pvc := &corev1.PersistentVolumeClaim{
@@ -428,7 +429,6 @@ func (r *HDFSClusterReconciler) createOrUpdateDataNode(ctx context.Context, hdfs
 		}
 		existingStatefulSet.Spec.Replicas = desiredDataNodeStatefulSet.Spec.Replicas
 		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredDataNodeStatefulSet.Spec.Template.Spec.Containers[0].Resources
-		existingStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests = desiredDataNodeStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests
 		if err := r.Update(ctx, existingStatefulSet); err != nil {
 			return err
 		}

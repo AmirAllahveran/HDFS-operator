@@ -33,20 +33,29 @@ func (r *HDFSClusterReconciler) ScaleDownAndUpStatefulSet(ctx context.Context, n
 		return err
 	}
 
-	// Remember the original replica count
-	originalReplicaCount := *existingStatefulSet.Spec.Replicas
-
-	// Scale down to zero
-	zero := int32(0)
-	existingStatefulSet.Spec.Replicas = &zero
-	time.Sleep(5 * time.Second)
-	// Update the StatefulSet with the new replica count
-	if err := r.Update(ctx, existingStatefulSet); err != nil {
-		return err
+	//// Remember the original replica count
+	//originalReplicaCount := *existingStatefulSet.Spec.Replicas
+	//
+	//// Scale down to zero
+	//zero := int32(0)
+	//existingStatefulSet.Spec.Replicas = &zero
+	//// Update the StatefulSet with the new replica count
+	//if err := r.Update(ctx, existingStatefulSet); err != nil {
+	//	return err
+	//}
+	//time.Sleep(2 * time.Second)
+	//// Scale back up to the original count
+	//existingStatefulSet.Spec.Replicas = &originalReplicaCount
+	//// Update the StatefulSet with the new replica count
+	//if err := r.Update(ctx, existingStatefulSet); err != nil {
+	//	return err
+	//}
+	// Add annotation to force pod recreation
+	if existingStatefulSet.Spec.Template.Annotations == nil {
+		existingStatefulSet.Spec.Template.Annotations = map[string]string{}
 	}
+	existingStatefulSet.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().UTC().Format(time.RFC3339)
 
-	// Scale back up to the original count
-	existingStatefulSet.Spec.Replicas = &originalReplicaCount
 	// Update the StatefulSet with the new replica count
 	if err := r.Update(ctx, existingStatefulSet); err != nil {
 		return err
@@ -65,25 +74,34 @@ func (r *HDFSClusterReconciler) ScaleDownAndUpDeployment(ctx context.Context, na
 		return err
 	}
 
-	// Remember the original replica count
-	originalReplicaCount := *existingDeployment.Spec.Replicas
+	//// Remember the original replica count
+	//originalReplicaCount := *existingDeployment.Spec.Replicas
+	//
+	//// Scale down to zero
+	//zero := int32(0)
+	//existingDeployment.Spec.Replicas = &zero
+	//
+	//// Update the StatefulSet with the new replica count
+	//if err := r.Update(ctx, existingDeployment); err != nil {
+	//	return err
+	//}
+	//time.Sleep(2 * time.Second)
+	//// Scale back up to the original count
+	//existingDeployment.Spec.Replicas = &originalReplicaCount
+	//// Update the StatefulSet with the new replica count
+	//if err := r.Update(ctx, existingDeployment); err != nil {
+	//	return err
+	//}
 
-	// Scale down to zero
-	zero := int32(0)
-	existingDeployment.Spec.Replicas = &zero
-
+	// Add annotation to force pod recreation
+	if existingDeployment.Spec.Template.Annotations == nil {
+		existingDeployment.Spec.Template.Annotations = map[string]string{}
+	}
+	existingDeployment.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().UTC().Format(time.RFC3339)
 	// Update the StatefulSet with the new replica count
 	if err := r.Update(ctx, existingDeployment); err != nil {
 		return err
 	}
-	time.Sleep(5 * time.Second)
-	// Scale back up to the original count
-	existingDeployment.Spec.Replicas = &originalReplicaCount
-	// Update the StatefulSet with the new replica count
-	if err := r.Update(ctx, existingDeployment); err != nil {
-		return err
-	}
-
 	return nil
 }
 

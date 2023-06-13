@@ -153,36 +153,8 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		if err := r.Create(ctx, desiredStatefulSet); err != nil {
 			return err
 		}
-		//replica, _ := strconv.Atoi(hdfsCluster.Spec.NameNode.Replicas)
-		//
-		//for i := 0; i < replica; i++ {
-		//	pvc := &corev1.PersistentVolumeClaim{}
-		//	retry := 0
-		//	for {
-		//		if err := r.Get(ctx, client.ObjectKey{
-		//			Namespace: hdfsCluster.Namespace,
-		//			Name:      hdfsCluster.Name + "-namenode-" + hdfsCluster.Name + "-namenode-" + strconv.Itoa(i),
-		//		}, pvc); err != nil {
-		//			time.Sleep(time.Second * 1)
-		//			retry++
-		//			//continue
-		//		} else {
-		//			break
-		//		}
-		//		if retry > 10 {
-		//			return err
-		//		}
-		//	}
-		//
-		//	if err := ctrl.SetControllerReference(hdfsCluster, pvc, r.Scheme); err != nil {
-		//		return err
-		//	}
-		//
-		//	if err := r.Update(ctx, pvc); err != nil {
-		//		return err
-		//	}
-		//}
-	} else {
+	} else if existingStatefulSet.Spec.Replicas != desiredStatefulSet.Spec.Replicas ||
+		&existingStatefulSet.Spec.Template.Spec.Containers[0].Resources != &desiredStatefulSet.Spec.Template.Spec.Containers[0].Resources {
 		if *desiredStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			pvc := &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
@@ -196,7 +168,6 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		}
 		existingStatefulSet.Spec.Replicas = desiredStatefulSet.Spec.Replicas
 		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredStatefulSet.Spec.Template.Spec.Containers[0].Resources
-		existingStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests = desiredStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests
 		if err := r.Update(ctx, existingStatefulSet); err != nil {
 			return err
 		}
@@ -740,40 +711,3 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 
 	return stsTempalte, nil
 }
-
-//func (r *HDFSClusterReconciler) nameNodeExists(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster) (bool, error) {
-//	// Define the desired NameNode StatefulSet object
-//	desiredStatefulSet, _ := r.desiredNameNodeStatefulSet(hdfsCluster)
-//
-//	// Check if the StatefulSet already exists
-//	existingStatefulSet := &appsv1.StatefulSet{}
-//	err := r.Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet), existingStatefulSet)
-//
-//	if err != nil {
-//		if errors.IsNotFound(err) {
-//			return false, nil
-//		}
-//		return false, err
-//	}
-//
-//	// Check if the NameNode pod is in Running state
-//	nameNodePod := &corev1.Pod{}
-//	nameNodePodName := types.NamespacedName{
-//		Namespace: hdfsCluster.Namespace,
-//		Name:      fmt.Sprintf("%s-0", desiredStatefulSet.Name),
-//	}
-//	err = r.Get(ctx, nameNodePodName, nameNodePod)
-//
-//	if err != nil {
-//		if errors.IsNotFound(err) {
-//			return false, nil
-//		}
-//		return false, err
-//	}
-//
-//	if nameNodePod.Status.Phase != corev1.PodRunning {
-//		return false, nil
-//	}
-//
-//	return true, nil
-//}

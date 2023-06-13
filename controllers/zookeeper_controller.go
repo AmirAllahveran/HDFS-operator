@@ -420,7 +420,8 @@ func (r *HDFSClusterReconciler) createOrUpdateZookeeper(ctx context.Context, hdf
 		if err := r.Create(ctx, desiredZookeeperStatefulSet); err != nil {
 			return err
 		}
-	} else {
+	} else if existingStatefulSet.Spec.Replicas != desiredZookeeperStatefulSet.Spec.Replicas ||
+		&existingStatefulSet.Spec.Template.Spec.Containers[0].Resources != &desiredZookeeperStatefulSet.Spec.Template.Spec.Containers[0].Resources {
 		if *desiredZookeeperStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			for i := *desiredZookeeperStatefulSet.Spec.Replicas; i < *existingStatefulSet.Spec.Replicas; i++ {
 				pvc := &corev1.PersistentVolumeClaim{
@@ -436,7 +437,6 @@ func (r *HDFSClusterReconciler) createOrUpdateZookeeper(ctx context.Context, hdf
 		}
 		existingStatefulSet.Spec.Replicas = desiredZookeeperStatefulSet.Spec.Replicas
 		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredZookeeperStatefulSet.Spec.Template.Spec.Containers[0].Resources
-		existingStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests = desiredZookeeperStatefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests
 		if err := r.Update(ctx, existingStatefulSet); err != nil {
 			return err
 		}
