@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -110,7 +109,7 @@ func (r *HDFSClusterReconciler) desiredHadoopDeployment(hdfsCluster *v1alpha1.HD
 	return deploymentTemplate, nil
 }
 
-func (r *HDFSClusterReconciler) createHadoop(ctx context.Context, hdfs *v1alpha1.HDFSCluster, logger logr.Logger) error {
+func (r *HDFSClusterReconciler) createHadoop(ctx context.Context, hdfs *v1alpha1.HDFSCluster) error {
 	// Define the desired Hadoop object
 	desiredHadoopDeployment, _ := r.desiredHadoopDeployment(hdfs)
 
@@ -124,7 +123,7 @@ func (r *HDFSClusterReconciler) createHadoop(ctx context.Context, hdfs *v1alpha1
 	}
 	// Create Service
 	if errors.IsNotFound(err) {
-		logger.Info("creating hadoop")
+		//logger.Info("creating hadoop")
 		if err := r.Create(ctx, desiredHadoopDeployment); err != nil {
 			return err
 		}

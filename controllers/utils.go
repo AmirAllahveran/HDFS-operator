@@ -3,7 +3,9 @@ package controllers
 import (
 	"context"
 	"encoding/xml"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
@@ -112,13 +114,22 @@ func resourceRequirements(resources v1alpha1.Resources) (*v1.ResourceRequirement
 	return &req, nil
 }
 
-type MyXml struct {
-	XMLName xml.Name `xml:"MyXml"`
-	Content string   `xml:"Content"`
+type Property struct {
+	Name  string `xml:"name"`
+	Value string `xml:"value"`
+}
+
+type Configuration struct {
+	Properties []Property `xml:"property"`
 }
 
 func compareXML(xml1, xml2 string) bool {
-	var parsed1, parsed2 MyXml
+	var parsed1, parsed2 Configuration
+
+	// Get the substring from <configuration> to </configuration>
+	xml1 = extractConfiguration(xml1)
+	xml2 = extractConfiguration(xml2)
+
 	err1 := xml.Unmarshal([]byte(xml1), &parsed1)
 	err2 := xml.Unmarshal([]byte(xml2), &parsed2)
 
@@ -127,5 +138,31 @@ func compareXML(xml1, xml2 string) bool {
 		return false
 	}
 
-	return parsed1 == parsed2
+	// Sort the properties by name to ensure consistent comparison
+	sort.Slice(parsed1.Properties, func(i, j int) bool {
+		return parsed1.Properties[i].Name < parsed1.Properties[j].Name
+	})
+	sort.Slice(parsed2.Properties, func(i, j int) bool {
+		return parsed2.Properties[i].Name < parsed2.Properties[j].Name
+	})
+
+	return compareProperties(parsed1.Properties, parsed2.Properties)
+}
+
+func compareProperties(properties1, properties2 []Property) bool {
+	if len(properties1) != len(properties2) {
+		return false
+	}
+	for i := range properties1 {
+		if properties1[i].Name != properties2[i].Name || properties1[i].Value != properties2[i].Value {
+			return false
+		}
+	}
+	return true
+}
+
+func extractConfiguration(xmlString string) string {
+	start := strings.Index(xmlString, "<configuration>")
+	end := strings.LastIndex(xmlString, "</configuration>")
+	return xmlString[start : end+len("</configuration>")]
 }
