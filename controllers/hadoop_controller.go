@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -109,7 +110,7 @@ func (r *HDFSClusterReconciler) desiredHadoopDeployment(hdfsCluster *v1alpha1.HD
 	return deploymentTemplate, nil
 }
 
-func (r *HDFSClusterReconciler) createHadoop(ctx context.Context, hdfs *v1alpha1.HDFSCluster) error {
+func (r *HDFSClusterReconciler) createHadoop(ctx context.Context, hdfs *v1alpha1.HDFSCluster, logger logr.Logger) error {
 	// Define the desired Hadoop object
 	desiredHadoopDeployment, _ := r.desiredHadoopDeployment(hdfs)
 
@@ -124,6 +125,20 @@ func (r *HDFSClusterReconciler) createHadoop(ctx context.Context, hdfs *v1alpha1
 		if err := r.Create(ctx, desiredHadoopDeployment); err != nil {
 			return err
 		}
+		// Check if the hadoop already exists
+		for {
+			existingDeployment := &appsv1.Deployment{}
+			err := r.Get(ctx, client.ObjectKeyFromObject(desiredHadoopDeployment), existingDeployment)
+			if err != nil && !errors.IsNotFound(err) {
+				return err
+			}
+			if errors.IsNotFound(err) {
+				logger.Info("waiting to create hadoop ...")
+			} else {
+				break
+			}
+		}
+
 		hdfs.Status.CreationTime = time.Now().String()
 		errStatus := r.Status().Update(ctx, hdfs)
 		if errStatus != nil {
