@@ -124,7 +124,6 @@ func (r *HDFSClusterReconciler) createHadoop(ctx context.Context, hdfs *v1alpha1
 		if err := r.Create(ctx, desiredHadoopDeployment); err != nil {
 			return err
 		}
-		time.Sleep(5 * time.Second)
 		hdfs.Status.CreationTime = time.Now().String()
 		errStatus := r.Status().Update(ctx, hdfs)
 		if errStatus != nil {

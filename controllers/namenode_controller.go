@@ -2,11 +2,6 @@ package controllers
 
 import (
 	"context"
-	"net/url"
-	"regexp"
-	"strconv"
-	"time"
-
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -14,8 +9,11 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"net/url"
+	"regexp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 func (r *HDFSClusterReconciler) desiredHANameNodeConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
@@ -155,7 +153,6 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		if err := r.Create(ctx, desiredStatefulSet); err != nil {
 			return err
 		}
-		time.Sleep(5 * time.Second)
 		//replica, _ := strconv.Atoi(hdfsCluster.Spec.NameNode.Replicas)
 		//
 		//for i := 0; i < replica; i++ {
