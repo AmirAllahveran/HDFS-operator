@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/xml"
 	"strconv"
 	"time"
 
@@ -111,32 +112,20 @@ func resourceRequirements(resources v1alpha1.Resources) (*v1.ResourceRequirement
 	return &req, nil
 }
 
-func stringEqual(s1, s2 string) bool {
-	runeMap := make(map[rune]bool)
-	for _, char := range s1 {
-		runeMap[char] = true
-	}
-
-	for _, char := range s2 {
-		if !runeMap[char] {
-			return false
-		}
-	}
-
-	return true
+type MyXml struct {
+	XMLName xml.Name `xml:"MyXml"`
+	Content string   `xml:"Content"`
 }
-func stringDiff(s1, s2 string) string {
-	runeMap := make(map[rune]bool)
-	for _, char := range s2 {
-		runeMap[char] = true
+
+func compareXML(xml1, xml2 string) bool {
+	var parsed1, parsed2 MyXml
+	err1 := xml.Unmarshal([]byte(xml1), &parsed1)
+	err2 := xml.Unmarshal([]byte(xml2), &parsed2)
+
+	// If there is an error in unmarshalling, we return false
+	if err1 != nil || err2 != nil {
+		return false
 	}
 
-	diff := ""
-	for _, char := range s1 {
-		if !runeMap[char] {
-			diff += string(char)
-		}
-	}
-
-	return diff
+	return parsed1 == parsed2
 }

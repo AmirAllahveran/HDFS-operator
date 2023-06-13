@@ -178,35 +178,23 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		//if errStatus != nil {
 		//	return errStatus
 		//}
-	} else if stringEqual(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]) ||
-		stringEqual(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) {
-		logger.Info("Updating configmap")
-		if stringEqual(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]) {
-			logger.Info("hdfs-site.xml")
-			logger.Info(stringDiff(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]))
-		}
-		if stringEqual(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) {
-			logger.Info("core-site.xml")
-			logger.Info(stringDiff(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]))
-		}
+	} else if !compareXML(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]) ||
+		!compareXML(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) {
+		logger.Info("updating configmap")
 		existingConfigMap.Data = desiredConfigMap.Data
 		if err := r.Update(ctx, existingConfigMap); err != nil {
-			logger.Info("Updating configmap 187")
 			return err
 		}
 		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace)
 		if err != nil {
-			logger.Info("ScaleDownAndUpStatefulSet datanode")
 			return err
 		}
 		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace)
 		if err != nil {
-			logger.Info("ScaleDownAndUpStatefulSet namenode")
 			return err
 		}
 		err = r.ScaleDownAndUpDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace)
 		if err != nil {
-			logger.Info("ScaleDownAndUpDeployment hadoop")
 			return err
 		}
 		if hdfs.Spec.NameNode.Replicas == 2 {
