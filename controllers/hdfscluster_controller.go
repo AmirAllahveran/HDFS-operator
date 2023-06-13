@@ -88,6 +88,7 @@ func (r *HDFSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		//logger.Info("create Or Update Components")
 		err = r.createOrUpdateComponents(ctx, &hdfs, logger)
 		if err != nil {
+			logger.Info("Error occurred during create Or Update Components")
 			return ctrl.Result{}, err
 		}
 	}
@@ -111,22 +112,25 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 	//logger.Info("createOrUpdateConfigmap", "name", hdfs.Name)
 	err := r.createOrUpdateConfigmap(ctx, hdfs)
 	if err != nil {
+		logger.Info("Error occurred during createOrUpdateConfigmap")
 		return err
 	}
 	//logger.Info("createOrUpdateNameNode", "name", hdfs.Name)
 	err = r.createOrUpdateNameNode(ctx, hdfs)
 	if err != nil {
+		logger.Info("Error occurred during createOrUpdateNameNode")
 		return err
 	}
 	//logger.Info("createOrUpdateDataNode", "name", hdfs.Name)
 	err = r.createOrUpdateDataNode(ctx, hdfs)
 	if err != nil {
+		logger.Info("Error occurred during createOrUpdateDataNode")
 		return err
 	}
 	//logger.Info("createHadoop", "name", hdfs.Name)
 	err = r.createHadoop(ctx, hdfs, logger)
 	if err != nil {
-		logger.Error(err, "createHadoop", "name", hdfs.Name)
+		logger.Info("Error occurred during createHadoop")
 		return err
 	}
 
