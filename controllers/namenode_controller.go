@@ -466,7 +466,7 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 		namenodeDataDir = "/data/hadoop/namenode"
 	}
 
-	initContainerCommand := "while [ $(curl -m 1 -s -o /dev/null -w \"%{http_code}\" http://" + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:8080/commands/ruok)!= \"200\" ]; do echo waiting; sleep 2; done"
+	initContainerCommand := "while [ $(curl -m 1 -s -o /dev/null -w \"%{http_code}\" http://" + hdfsCluster.Name + "-zookeeper-" + strconv.Itoa(hdfsCluster.Spec.Zookeeper.Replicas-1) + "." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:8080/commands/ruok)!= \"200\" ]; do echo waiting; sleep 2; done"
 
 	var defaultPort int
 
