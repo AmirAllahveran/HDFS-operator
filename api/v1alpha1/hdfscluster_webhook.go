@@ -135,7 +135,6 @@ func (h *HDFSCluster) Default() {
 	}
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-hdfs-aut-tech-v1alpha1-hdfscluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=hdfs.aut.tech,resources=hdfsclusters,verbs=create;update,versions=v1alpha1,name=vhdfscluster.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &HDFSCluster{}

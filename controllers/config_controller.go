@@ -118,30 +118,6 @@ func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	return mapToXml(hdfsSite)
 }
 
-//func (r *HDFSClusterReconciler) clusterConfigExists(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster) (bool, error) {
-//	// Define the desired ConfigMap object
-//	desiredConfigMap, _ := r.desiredClusterConfigMap(hdfsCluster)
-//	if desiredConfigMap == nil {
-//		return false, fmt.Errorf("desiredClusterConfigMap returned nil")
-//	}
-//
-//	// Check if the ConfigMap already exists
-//	existingConfigMap := &corev1.ConfigMap{}
-//	err := r.Get(ctx, client.ObjectKeyFromObject(desiredConfigMap), existingConfigMap)
-//
-//	if err != nil {
-//		if errors.IsNotFound(err) {
-//			// ConfigMap was not found
-//			return false, nil
-//		}
-//		// An error occurred
-//		return false, err
-//	}
-//
-//	// ConfigMap was found
-//	return true, nil
-//}
-
 func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdfs *v1alpha1.HDFSCluster, logger logr.Logger) error {
 	// Define the desired NameNode Service object
 	desiredConfigMap, _ := r.desiredClusterConfigMap(hdfs)

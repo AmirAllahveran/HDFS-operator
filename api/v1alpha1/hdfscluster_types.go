@@ -20,8 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // HDFSClusterSpec defines the desired state of HDFSCluster
 type HDFSClusterSpec struct {
 	// +kubebuilder:validation:Optional
@@ -38,24 +36,6 @@ type Node struct {
 	Replicas  int       `json:"replicas"`
 	Resources Resources `json:"resources"`
 }
-
-//type DataNode struct {
-//	Replicas int `json:"replicas"`
-//	// +kubebuilder:validation:Optional
-//	Resources Resources `json:"resources"`
-//}
-//
-//type Zookeeper struct {
-//	Replicas int `json:"replicas"`
-//	// +kubebuilder:validation:Optional
-//	Resources Resources `json:"resources"`
-//}
-
-//type JournalNode struct {
-//	Replicas int `json:"replicas"`
-//	// +kubebuilder:validation:Optional
-//	Resources Resources `json:"resources"`
-//}
 
 type ClusterConfig struct {
 	// +kubebuilder:validation:Optional

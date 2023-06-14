@@ -142,7 +142,5 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 func (r *HDFSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&hdfsv1alpha1.HDFSCluster{}).
-		//Watches(&source.Kind{Type: &appsv1.StatefulSet{}},
-		//	&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &hdfsv1alpha1.HDFSCluster{}}).
 		Complete(r)
 }
