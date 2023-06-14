@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
@@ -83,9 +84,9 @@ func TestHDFSClusterReconciler_createOrUpdateConfigmap(t *testing.T) {
 		Client: fake.NewClientBuilder().WithScheme(s).WithObjects(hdfsCluster).Build(),
 		Scheme: s,
 	}
-
+	logger := log.FromContext(context.Background())
 	// Call createOrUpdateConfigmap - this should create a new ConfigMap
-	if err := r.createOrUpdateConfigmap(context.Background(), hdfsCluster); err != nil {
+	if err := r.createOrUpdateConfigmap(context.Background(), hdfsCluster, logger); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
