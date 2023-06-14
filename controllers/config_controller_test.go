@@ -25,6 +25,14 @@ func TestHDFSClusterReconciler_desiredClusterConfigMap(t *testing.T) {
 			Name:      "hdfs-cluster",
 			Namespace: "default",
 		},
+		Spec: v1alpha1.HDFSClusterSpec{
+			NameNode: v1alpha1.Node{
+				Replicas: 1,
+				Resources: v1alpha1.Resources{
+					Storage: "1Gi",
+				},
+			},
+		},
 	}
 
 	// Create a Reconciler instance with the fake client
@@ -76,6 +84,14 @@ func TestHDFSClusterReconciler_createOrUpdateConfigmap(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hdfs-cluster",
 			Namespace: "default",
+		},
+		Spec: v1alpha1.HDFSClusterSpec{
+			NameNode: v1alpha1.Node{
+				Replicas: 1,
+				Resources: v1alpha1.Resources{
+					Storage: "1Gi",
+				},
+			},
 		},
 	}
 

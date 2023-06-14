@@ -29,11 +29,13 @@ func TestHDFSClusterReconciler_createOrUpdateComponents(t *testing.T) {
 		},
 		Spec: v1alpha1.HDFSClusterSpec{
 			DataNode: v1alpha1.Node{
+				Replicas: 3,
 				Resources: v1alpha1.Resources{
 					Storage: "10Gi",
 				},
 			},
 			NameNode: v1alpha1.Node{
+				Replicas: 1,
 				Resources: v1alpha1.Resources{
 					Storage: "2Gi",
 				},
