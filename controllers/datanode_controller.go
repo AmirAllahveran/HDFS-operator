@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/url"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
@@ -63,18 +64,20 @@ echo $_CLUSTER_ID | grep -q -v null`,
 }
 
 func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
-	//var port int
-	//if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.datanode.http.address"]; ok {
-	//	_, portStr, err := net.SplitHostPort(val)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	port, _ = strconv.Atoi(portStr)
-	//} else {
-	//	port = 9864
-	//}
-
 	compute, _ := resourceRequirements(hdfsCluster.Spec.DataNode.Resources)
+
+	var webPort int
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.http-address"]; ok {
+		u, err := url.Parse("//" + val)
+		if err != nil {
+			return nil, err
+		}
+		webPort, _ = strconv.Atoi(u.Port())
+	} else {
+		webPort = 9870
+	}
+
+	initContainerCommand := "while [ $(curl -m 1 -s -o /dev/null -w \"%{http_code}\" http://" + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:" + strconv.Itoa(webPort) + "/index.html)!= \"200\" ]; do echo waiting; sleep 2; done"
 
 	var datanodeDataDir string
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.datanode.data.dir"]; ok {
@@ -214,6 +217,18 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 							},
 						},
 					},
+					InitContainers: []corev1.Container{
+						{
+							Image:           "curlimages/curl:8.1.2",
+							Name:            "wait-for-namenode",
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Command: []string{
+								"sh",
+								"-c",
+								initContainerCommand,
+							},
+						},
+					},
 					RestartPolicy: corev1.RestartPolicyAlways,
 					Volumes: []corev1.Volume{
 						{
@@ -292,13 +307,6 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 								corev1.ResourceStorage: resource.MustParse(hdfsCluster.Spec.DataNode.Resources.Storage),
 							},
 						},
-						//Selector: &metav1.LabelSelector{
-						//	MatchLabels: map[string]string{
-						//		"cluster":   hdfsCluster.Name,
-						//		"app":       "hdfsCluster",
-						//		"component": "datanode",
-						//	},
-						//},
 					},
 				},
 			},
@@ -311,46 +319,6 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 
 	return stsTemplate, nil
 }
-
-//func (r *HDFSClusterReconciler) dataNodesExist(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster) (bool, error) {
-//	// Define the desired DataNode StatefulSet object
-//	desiredStatefulSet, _ := r.desiredDataNodeStatefulSet(hdfsCluster)
-//
-//	// Check if the StatefulSet already exists
-//	existingStatefulSet := &appsv1.StatefulSet{}
-//	err := r.Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet), existingStatefulSet)
-//
-//	if err != nil {
-//		if errors.IsNotFound(err) {
-//			return false, nil
-//		}
-//		return false, err
-//	}
-//
-//	// Check if all DataNode pods are in Running state
-//	replicas := desiredStatefulSet.Status.Replicas
-//	for i := int32(0); i < replicas; i++ {
-//		dataNodePod := &corev1.Pod{}
-//		dataNodePodName := types.NamespacedName{
-//			Namespace: hdfsCluster.Namespace,
-//			Name:      fmt.Sprintf("%s-%d", desiredStatefulSet.Name, i),
-//		}
-//		err = r.Get(ctx, dataNodePodName, dataNodePod)
-//
-//		if err != nil {
-//			if errors.IsNotFound(err) {
-//				return false, nil
-//			}
-//			return false, err
-//		}
-//
-//		if dataNodePod.Status.Phase != corev1.PodRunning {
-//			return false, nil
-//		}
-//	}
-//
-//	return true, nil
-//}
 
 func (r *HDFSClusterReconciler) createOrUpdateDataNode(ctx context.Context, hdfs *v1alpha1.HDFSCluster) error {
 	// Define the desired NameNode Service object
