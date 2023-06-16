@@ -111,7 +111,7 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 			logger.Info("Error occurred during createOrUpdateJournalNode")
 			return err
 		}
-		logger.Info("createOrUpdateZookeeper", "name", hdfs.Name)
+		//logger.Info("createOrUpdateZookeeper", "name", hdfs.Name)
 		err = r.createOrUpdateZookeeper(ctx, hdfs)
 		if err != nil {
 			logger.Info("Error occurred during createOrUpdateZookeeper")
@@ -119,7 +119,7 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 		}
 	}
 	//logger.Info("createOrUpdateNameNode", "name", hdfs.Name)
-	err = r.createOrUpdateNameNode(ctx, hdfs)
+	err = r.createOrUpdateNameNode(ctx, hdfs, logger)
 	if err != nil {
 		logger.Info("Error occurred during createOrUpdateNameNode")
 		return err

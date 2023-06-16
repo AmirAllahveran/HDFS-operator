@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -10,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"net/url"
+	"reflect"
 	"regexp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -85,7 +87,7 @@ hdfs namenode`,
 	return configMapTemplate, nil
 }
 
-func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster) error {
+func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfsCluster *v1alpha1.HDFSCluster, logger logr.Logger) error {
 	// Define the desired NameNode Service object
 	desiredService, _ := r.desiredNameNodeService(hdfsCluster)
 	// Define the desired NameNode StatefulSet object
@@ -139,6 +141,11 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		//	if err := r.Update(ctx, existingService); err != nil {
 		//		return err
 		//	}
+	} else if reflect.DeepEqual(existingService.Spec.Ports, desiredService.Spec.Ports) {
+		existingService.Spec.Ports = desiredService.Spec.Ports
+		if err := r.Update(ctx, existingService); err != nil {
+
+		}
 	}
 
 	// Check if the StatefulSet already exists
@@ -155,6 +162,7 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		}
 	} else if existingStatefulSet.Spec.Replicas != desiredStatefulSet.Spec.Replicas ||
 		&existingStatefulSet.Spec.Template.Spec.Containers[0].Resources != &desiredStatefulSet.Spec.Template.Spec.Containers[0].Resources {
+		logger.Info("updating namenode 165")
 		if *desiredStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			pvc := &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
@@ -163,12 +171,14 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 				},
 			}
 			if err := r.Delete(ctx, pvc); err != nil {
+				logger.Info("delete namenode 173")
 				return err
 			}
 		}
 		existingStatefulSet.Spec.Replicas = desiredStatefulSet.Spec.Replicas
 		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredStatefulSet.Spec.Template.Spec.Containers[0].Resources
 		if err := r.Update(ctx, existingStatefulSet); err != nil {
+			logger.Info("updating namenode 181")
 			return err
 		}
 	}
