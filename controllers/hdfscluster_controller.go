@@ -108,30 +108,32 @@ func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hd
 		//logger.Info("createOrUpdateJournalNode", "name", hdfs.Name)
 		err := r.createOrUpdateJournalNode(ctx, hdfs)
 		if err != nil {
+			logger.Info("Error occurred during createOrUpdateJournalNode")
 			return err
 		}
-		//logger.Info("createOrUpdateZookeeper", "name", hdfs.Name)
+		logger.Info("createOrUpdateZookeeper", "name", hdfs.Name)
 		err = r.createOrUpdateZookeeper(ctx, hdfs)
 		if err != nil {
+			logger.Info("Error occurred during createOrUpdateZookeeper")
 			return err
 		}
 	}
 	//logger.Info("createOrUpdateNameNode", "name", hdfs.Name)
 	err = r.createOrUpdateNameNode(ctx, hdfs)
 	if err != nil {
-		//logger.Info("Error occurred during createOrUpdateNameNode")
+		logger.Info("Error occurred during createOrUpdateNameNode")
 		return err
 	}
 	//logger.Info("createOrUpdateDataNode", "name", hdfs.Name)
 	err = r.createOrUpdateDataNode(ctx, hdfs)
 	if err != nil {
-		//logger.Info("Error occurred during createOrUpdateDataNode")
+		logger.Info("Error occurred during createOrUpdateDataNode")
 		return err
 	}
 	//logger.Info("createHadoop", "name", hdfs.Name)
 	err = r.createHadoop(ctx, hdfs)
 	if err != nil {
-		//logger.Info("Error occurred during createHadoop")
+		logger.Info("Error occurred during createHadoop")
 		return err
 	}
 

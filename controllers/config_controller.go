@@ -143,17 +143,9 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 			return err
 		}
 		if errors.IsNotFound(errJN) {
-			logger.Info("journal not created yet")
 			updateJN = false
-		} else {
-			rep1 := strconv.Itoa(int(*existingJournalNodeStatefulSet.Spec.Replicas))
-			rep2 := strconv.Itoa(hdfs.Spec.JournalNode.Replicas)
-			logger.Info("existingJournalNodeStatefulSet.Spec.Replicas: " + rep1)
-			logger.Info("hdfs.Spec.JournalNode.Replicas: : " + rep2)
-			if strconv.Itoa(int(*existingJournalNodeStatefulSet.Spec.Replicas)) != strconv.Itoa(hdfs.Spec.JournalNode.Replicas) {
-				logger.Info("updating the updateJN")
-				updateJN = true
-			}
+		} else if strconv.Itoa(int(*existingJournalNodeStatefulSet.Spec.Replicas)) != strconv.Itoa(hdfs.Spec.JournalNode.Replicas) {
+			updateJN = true
 		}
 
 		existingZookeeperStatefulSet := &appsv1.StatefulSet{}
@@ -166,18 +158,9 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		}
 
 		if errors.IsNotFound(errZK) {
-			logger.Info("zookeeper not created yet")
 			updateZK = false
-		} else {
-			rep11 := strconv.Itoa(int(*existingZookeeperStatefulSet.Spec.Replicas))
-			rep22 := strconv.Itoa(hdfs.Spec.Zookeeper.Replicas)
-			logger.Info("existingZookeeperStatefulSet.Spec.Replicas: " + rep11)
-			logger.Info("hdfs.Spec.Zookeeper.Replicas: : " + rep22)
-
-			if strconv.Itoa(int(*existingZookeeperStatefulSet.Spec.Replicas)) != strconv.Itoa(hdfs.Spec.Zookeeper.Replicas) {
-				logger.Info("updating the updateZK")
-				updateZK = true
-			}
+		} else if strconv.Itoa(int(*existingZookeeperStatefulSet.Spec.Replicas)) != strconv.Itoa(hdfs.Spec.Zookeeper.Replicas) {
+			updateZK = true
 		}
 	}
 
