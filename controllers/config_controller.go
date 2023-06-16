@@ -131,39 +131,51 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		logger.Error(err, "Error occurred during Get configmap")
 		return err
 	}
-	updateJNZk := false
+	updateJN := false
+	updateZK := false
 	if hdfs.Spec.NameNode.Replicas == 2 {
 		existingJournalNodeStatefulSet := &appsv1.StatefulSet{}
-		err = r.Get(ctx, client.ObjectKey{
+		errJN := r.Get(ctx, client.ObjectKey{
 			Namespace: hdfs.Namespace,
 			Name:      hdfs.Name + "-journalnode",
 		}, existingJournalNodeStatefulSet)
-		if err != nil && !errors.IsNotFound(err) {
+		if errJN != nil && !errors.IsNotFound(errJN) {
 			return err
+		}
+		if errors.IsNotFound(errJN) {
+			logger.Info("journal not created yet")
+			updateJN = false
+		} else {
+			rep1 := strconv.Itoa(int(*existingJournalNodeStatefulSet.Spec.Replicas))
+			rep2 := strconv.Itoa(hdfs.Spec.JournalNode.Replicas)
+			logger.Info("existingJournalNodeStatefulSet.Spec.Replicas: " + rep1)
+			logger.Info("hdfs.Spec.JournalNode.Replicas: : " + rep2)
+			if existingJournalNodeStatefulSet.Spec.Replicas != int32Ptr(int32(hdfs.Spec.JournalNode.Replicas)) {
+				updateJN = true
+			}
 		}
 
 		existingZookeeperStatefulSet := &appsv1.StatefulSet{}
-		err = r.Get(ctx, client.ObjectKey{
+		errZK := r.Get(ctx, client.ObjectKey{
 			Namespace: hdfs.Namespace,
 			Name:      hdfs.Name + "-zookeeper",
 		}, existingZookeeperStatefulSet)
-		if err != nil && !errors.IsNotFound(err) {
+		if errZK != nil && !errors.IsNotFound(errZK) {
 			return err
 		}
 
-		rep1 := strconv.Itoa(int(*existingJournalNodeStatefulSet.Spec.Replicas))
-		rep2 := strconv.Itoa(hdfs.Spec.JournalNode.Replicas)
-		logger.Info("existingJournalNodeStatefulSet.Spec.Replicas: " + rep1)
-		logger.Info("hdfs.Spec.JournalNode.Replicas: : " + rep2)
+		if errors.IsNotFound(errZK) {
+			logger.Info("zookeeper not created yet")
+			updateZK = false
+		} else {
+			rep11 := strconv.Itoa(int(*existingZookeeperStatefulSet.Spec.Replicas))
+			rep22 := strconv.Itoa(hdfs.Spec.Zookeeper.Replicas)
+			logger.Info("existingZookeeperStatefulSet.Spec.Replicas: " + rep11)
+			logger.Info("hdfs.Spec.Zookeeper.Replicas: : " + rep22)
 
-		rep11 := strconv.Itoa(int(*existingZookeeperStatefulSet.Spec.Replicas))
-		rep22 := strconv.Itoa(hdfs.Spec.Zookeeper.Replicas)
-		logger.Info("existingZookeeperStatefulSet.Spec.Replicas: " + rep11)
-		logger.Info("hdfs.Spec.Zookeeper.Replicas: : " + rep22)
-
-		if existingJournalNodeStatefulSet.Spec.Replicas != int32Ptr(int32(hdfs.Spec.JournalNode.Replicas)) ||
-			existingZookeeperStatefulSet.Spec.Replicas != int32Ptr(int32(hdfs.Spec.Zookeeper.Replicas)) {
-			updateJNZk = true
+			if existingZookeeperStatefulSet.Spec.Replicas != int32Ptr(int32(hdfs.Spec.Zookeeper.Replicas)) {
+				updateZK = true
+			}
 		}
 	}
 
@@ -192,7 +204,7 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		//	return errStatus
 		//}
 	} else if !compareXML(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]) ||
-		!compareXML(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) || updateJNZk {
+		!compareXML(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) || updateJN || updateZK {
 		logger.Info("updating configmap")
 		existingConfigMap.Data = desiredConfigMap.Data
 		if err := r.Update(ctx, existingConfigMap); err != nil {
