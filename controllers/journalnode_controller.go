@@ -391,3 +391,56 @@ func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alp
 
 	return stsTemplate, nil
 }
+
+func (r *HDFSClusterReconciler) deleteJournalNode(ctx context.Context, hdfs *v1alpha1.HDFSCluster) error {
+
+	pdb := &v1.PodDisruptionBudget{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hdfs.Name + "-journalnode",
+			Namespace: hdfs.Namespace,
+		},
+	}
+
+	err := r.Delete(ctx, pdb)
+	if err != nil {
+		return err
+	}
+
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: hdfs.Namespace,
+			Name:      hdfs.Name + "-journalnode",
+		},
+	}
+
+	err = r.Delete(ctx, svc)
+	if err != nil {
+		return err
+	}
+	sts := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hdfs.Name + "-journalnode",
+			Namespace: hdfs.Namespace,
+		},
+	}
+
+	err = r.Delete(ctx, sts)
+
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < hdfs.Spec.JournalNode.Replicas; i++ {
+		pvc := &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      hdfs.Name + "-journalnode-" + hdfs.Name + "-journalnode-" + strconv.Itoa(i),
+				Namespace: hdfs.Namespace,
+			},
+		}
+		if err := r.Delete(ctx, pvc); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

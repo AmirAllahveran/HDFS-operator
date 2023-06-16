@@ -174,6 +174,14 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 				logger.Info("delete namenode 173")
 				return err
 			}
+			err := r.deleteJournalNode(ctx, hdfsCluster)
+			if err != nil {
+				return err
+			}
+			err = r.deleteZookeeper(ctx, hdfsCluster)
+			if err != nil {
+				return err
+			}
 		}
 		existingStatefulSet.Spec.Replicas = desiredStatefulSet.Spec.Replicas
 		existingStatefulSet.Spec.Template.Spec.Containers[0].Resources = desiredStatefulSet.Spec.Template.Spec.Containers[0].Resources
@@ -488,6 +496,8 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 		namenodeDataDir = "/data/hadoop/namenode"
 	}
 
+	initContainerCommandZKNslookup := "while [ $(nslookup " + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local | grep -c 'Address: ') != " + strconv.Itoa(hdfsCluster.Spec.Zookeeper.Replicas) + " ]; do echo waiting; sleep 2; done"
+	initContainerCommandJNNslookup := "while [ $(nslookup " + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local | grep -c 'Address: ') != " + strconv.Itoa(hdfsCluster.Spec.JournalNode.Replicas) + " ]; do echo waiting; sleep 2; done"
 	initContainerCommandZK := "while [ $(curl -m 1 -s -o /dev/null -w \"%{http_code}\" http://" + hdfsCluster.Name + "-zookeeper-" + strconv.Itoa(hdfsCluster.Spec.Zookeeper.Replicas-1) + "." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:8080/commands/ruok)!= \"200\" ]; do echo waiting; sleep 2; done"
 	initContainerCommandJN := "while [ $(curl -m 1 -s -o /dev/null -w \"%{http_code}\" http://" + hdfsCluster.Name + "-journalnode-" + strconv.Itoa(hdfsCluster.Spec.JournalNode.Replicas-1) + "." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:" + strconv.Itoa(httpPort) + "/index.html)!= \"200\" ]; do echo waiting; sleep 2; done"
 
@@ -565,13 +575,19 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 					},
 					InitContainers: []corev1.Container{
 						{
-							Image:           "curlimages/curl:8.1.2",
+							Image:           "arunvelsriram/utils",
 							Name:            "wait-for-zookeeper",
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Command: []string{
 								"sh",
 								"-c",
+								initContainerCommandJNNslookup,
+								"sh",
+								"-c",
 								initContainerCommandJN,
+								"sh",
+								"-c",
+								initContainerCommandZKNslookup,
 								"sh",
 								"-c",
 								initContainerCommandZK,

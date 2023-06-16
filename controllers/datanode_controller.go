@@ -77,7 +77,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 	} else {
 		webPort = 9870
 	}
-
+	initContainerCommandDNNslookup := "while [ $(nslookup " + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local | grep -c 'Address: ') != " + strconv.Itoa(hdfsCluster.Spec.NameNode.Replicas) + " ]; do echo waiting; sleep 2; done"
 	initContainerCommand := "while [ $(curl -m 1 -s -o /dev/null -w \"%{http_code}\" http://" + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:" + strconv.Itoa(webPort) + "/index.html)!= \"200\" ]; do echo waiting; sleep 2; done"
 
 	var datanodeDataDir string
@@ -220,10 +220,13 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 					},
 					InitContainers: []corev1.Container{
 						{
-							Image:           "curlimages/curl:8.1.2",
+							Image:           "arunvelsriram/utils",
 							Name:            "wait-for-namenode",
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Command: []string{
+								"sh",
+								"-c",
+								initContainerCommandDNNslookup,
 								"sh",
 								"-c",
 								initContainerCommand,
