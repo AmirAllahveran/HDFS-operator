@@ -86,6 +86,7 @@ func (r *HDFSClusterReconciler) desiredZookeeperService(hdfsCluster *v1alpha1.HD
 					Protocol:   corev1.ProtocolTCP,
 				},
 			},
+			ClusterIP: corev1.ClusterIPNone,
 			Selector: map[string]string{
 				"cluster":   hdfsCluster.Name,
 				"app":       "hdfsCluster",
