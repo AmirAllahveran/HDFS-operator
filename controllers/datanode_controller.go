@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/url"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
@@ -352,8 +353,8 @@ func (r *HDFSClusterReconciler) createOrUpdateDataNode(ctx context.Context, hdfs
 		if err := r.Create(ctx, desiredDataNodeStatefulSet); err != nil {
 			return err
 		}
-	} else if existingStatefulSet.Spec.Replicas != desiredDataNodeStatefulSet.Spec.Replicas ||
-		&existingStatefulSet.Spec.Template.Spec.Containers[0].Resources != &desiredDataNodeStatefulSet.Spec.Template.Spec.Containers[0].Resources {
+	} else if !reflect.DeepEqual(existingStatefulSet.Spec.Replicas, desiredDataNodeStatefulSet.Spec.Replicas) ||
+		!reflect.DeepEqual(existingStatefulSet.Spec.Template.Spec.Containers[0].Resources, desiredDataNodeStatefulSet.Spec.Template.Spec.Containers[0].Resources) {
 		if *desiredDataNodeStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			for i := *desiredDataNodeStatefulSet.Spec.Replicas; i < *existingStatefulSet.Spec.Replicas; i++ {
 				pvc := &corev1.PersistentVolumeClaim{

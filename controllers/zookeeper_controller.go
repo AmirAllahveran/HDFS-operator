@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
@@ -420,8 +421,8 @@ func (r *HDFSClusterReconciler) createOrUpdateZookeeper(ctx context.Context, hdf
 		if err := r.Create(ctx, desiredZookeeperStatefulSet); err != nil {
 			return err
 		}
-	} else if existingStatefulSet.Spec.Replicas != desiredZookeeperStatefulSet.Spec.Replicas ||
-		&existingStatefulSet.Spec.Template.Spec.Containers[0].Resources != &desiredZookeeperStatefulSet.Spec.Template.Spec.Containers[0].Resources {
+	} else if !reflect.DeepEqual(existingStatefulSet.Spec.Replicas, desiredZookeeperStatefulSet.Spec.Replicas) ||
+		!reflect.DeepEqual(existingStatefulSet.Spec.Template.Spec.Containers[0].Resources, desiredZookeeperStatefulSet.Spec.Template.Spec.Containers[0].Resources) {
 		if *desiredZookeeperStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			for i := *desiredZookeeperStatefulSet.Spec.Replicas; i < *existingStatefulSet.Spec.Replicas; i++ {
 				pvc := &corev1.PersistentVolumeClaim{

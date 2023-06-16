@@ -141,7 +141,7 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		//	if err := r.Update(ctx, existingService); err != nil {
 		//		return err
 		//	}
-	} else if reflect.DeepEqual(existingService.Spec.Ports, desiredService.Spec.Ports) {
+	} else if !reflect.DeepEqual(existingService.Spec.Ports, desiredService.Spec.Ports) {
 		existingService.Spec.Ports = desiredService.Spec.Ports
 		if err := r.Update(ctx, existingService); err != nil {
 
@@ -160,8 +160,8 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 		if err := r.Create(ctx, desiredStatefulSet); err != nil {
 			return err
 		}
-	} else if existingStatefulSet.Spec.Replicas != desiredStatefulSet.Spec.Replicas ||
-		&existingStatefulSet.Spec.Template.Spec.Containers[0].Resources != &desiredStatefulSet.Spec.Template.Spec.Containers[0].Resources {
+	} else if !reflect.DeepEqual(existingStatefulSet.Spec.Replicas, desiredStatefulSet.Spec.Replicas) ||
+		!reflect.DeepEqual(existingStatefulSet.Spec.Template.Spec.Containers[0].Resources, desiredStatefulSet.Spec.Template.Spec.Containers[0].Resources) {
 		logger.Info("updating namenode 165")
 		if *desiredStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			pvc := &corev1.PersistentVolumeClaim{

@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"net/url"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
@@ -155,8 +156,8 @@ func (r *HDFSClusterReconciler) createOrUpdateJournalNode(ctx context.Context, h
 		if err := r.Create(ctx, desiredJournalNodeStatefulSet); err != nil {
 			return err
 		}
-	} else if existingStatefulSet.Spec.Replicas != desiredJournalNodeStatefulSet.Spec.Replicas ||
-		&existingStatefulSet.Spec.Template.Spec.Containers[0].Resources != &desiredJournalNodeStatefulSet.Spec.Template.Spec.Containers[0].Resources {
+	} else if !reflect.DeepEqual(existingStatefulSet.Spec.Replicas, desiredJournalNodeStatefulSet.Spec.Replicas) ||
+		!reflect.DeepEqual(existingStatefulSet.Spec.Template.Spec.Containers[0].Resources, desiredJournalNodeStatefulSet.Spec.Template.Spec.Containers[0].Resources) {
 		if *desiredJournalNodeStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {
 			for i := *desiredJournalNodeStatefulSet.Spec.Replicas; i < *existingStatefulSet.Spec.Replicas; i++ {
 				pvc := &corev1.PersistentVolumeClaim{
