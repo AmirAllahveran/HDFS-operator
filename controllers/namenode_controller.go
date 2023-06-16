@@ -459,6 +459,18 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 	} else {
 		webPort = 9870
 	}
+
+	var httpPort int
+	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.journalnode.http-address"]; ok {
+		u, err := url.Parse("//" + val)
+		if err != nil {
+			return nil, err
+		}
+		httpPort, _ = strconv.Atoi(u.Port())
+	} else {
+		httpPort = 8480
+	}
+
 	var namenodeDataDir string
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.data.dir"]; ok {
 		namenodeDataDir = val
@@ -466,7 +478,8 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 		namenodeDataDir = "/data/hadoop/namenode"
 	}
 
-	initContainerCommand := "while [ $(curl -m 1 -s -o /dev/null -w \"%{http_code}\" http://" + hdfsCluster.Name + "-zookeeper-" + strconv.Itoa(hdfsCluster.Spec.Zookeeper.Replicas-1) + "." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:8080/commands/ruok)!= \"200\" ]; do echo waiting; sleep 2; done"
+	initContainerCommandZK := "while [ $(curl -m 1 -s -o /dev/null -w \"%{http_code}\" http://" + hdfsCluster.Name + "-zookeeper-" + strconv.Itoa(hdfsCluster.Spec.Zookeeper.Replicas-1) + "." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:8080/commands/ruok)!= \"200\" ]; do echo waiting; sleep 2; done"
+	initContainerCommandJN := "while [ $(curl -m 1 -s -o /dev/null -w \"%{http_code}\" http://" + hdfsCluster.Name + "-journalnode-" + strconv.Itoa(hdfsCluster.Spec.JournalNode.Replicas-1) + "." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:" + strconv.Itoa(httpPort) + "/index.html)!= \"200\" ]; do echo waiting; sleep 2; done"
 
 	var defaultPort int
 
@@ -548,7 +561,10 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 							Command: []string{
 								"sh",
 								"-c",
-								initContainerCommand,
+								initContainerCommandJN,
+								"sh",
+								"-c",
+								initContainerCommandZK,
 							},
 						},
 					},
