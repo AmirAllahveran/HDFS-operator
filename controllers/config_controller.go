@@ -150,7 +150,7 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 			rep2 := strconv.Itoa(hdfs.Spec.JournalNode.Replicas)
 			logger.Info("existingJournalNodeStatefulSet.Spec.Replicas: " + rep1)
 			logger.Info("hdfs.Spec.JournalNode.Replicas: : " + rep2)
-			if existingJournalNodeStatefulSet.Spec.Replicas != int32Ptr(int32(hdfs.Spec.JournalNode.Replicas)) {
+			if strconv.Itoa(int(*existingJournalNodeStatefulSet.Spec.Replicas)) != strconv.Itoa(hdfs.Spec.JournalNode.Replicas) {
 				logger.Info("updating the updateJN")
 				updateJN = true
 			}
@@ -174,7 +174,7 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 			logger.Info("existingZookeeperStatefulSet.Spec.Replicas: " + rep11)
 			logger.Info("hdfs.Spec.Zookeeper.Replicas: : " + rep22)
 
-			if existingZookeeperStatefulSet.Spec.Replicas != int32Ptr(int32(hdfs.Spec.Zookeeper.Replicas)) {
+			if strconv.Itoa(int(*existingZookeeperStatefulSet.Spec.Replicas)) != strconv.Itoa(hdfs.Spec.Zookeeper.Replicas) {
 				logger.Info("updating the updateZK")
 				updateZK = true
 			}
