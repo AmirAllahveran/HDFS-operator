@@ -352,34 +352,6 @@ func (r *HDFSClusterReconciler) createOrUpdateDataNode(ctx context.Context, hdfs
 		if err := r.Create(ctx, desiredDataNodeStatefulSet); err != nil {
 			return err
 		}
-		//replica, _ := strconv.Atoi(hdfs.Spec.DataNode.Replicas)
-		//for i := 0; i < replica; i++ {
-		//	pvc := &corev1.PersistentVolumeClaim{}
-		//	retry := 0
-		//	for {
-		//		if err := r.Get(ctx, client.ObjectKey{
-		//			Namespace: hdfs.Namespace,
-		//			Name:      hdfs.Name + "-datanode-" + hdfs.Name + "-datanode-" + strconv.Itoa(i),
-		//		}, pvc); err != nil {
-		//			time.Sleep(time.Second * 1)
-		//			retry++
-		//			//continue
-		//		} else {
-		//			break
-		//		}
-		//		if retry > 10 {
-		//			return err
-		//		}
-		//	}
-		//
-		//	if err := ctrl.SetControllerReference(hdfs, pvc, r.Scheme); err != nil {
-		//		return err
-		//	}
-		//
-		//	if err := r.Update(ctx, pvc); err != nil {
-		//		return err
-		//	}
-		//}
 	} else if existingStatefulSet.Spec.Replicas != desiredDataNodeStatefulSet.Spec.Replicas ||
 		&existingStatefulSet.Spec.Template.Spec.Containers[0].Resources != &desiredDataNodeStatefulSet.Spec.Template.Spec.Containers[0].Resources {
 		if *desiredDataNodeStatefulSet.Spec.Replicas < *existingStatefulSet.Spec.Replicas {

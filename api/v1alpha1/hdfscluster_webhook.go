@@ -149,7 +149,10 @@ func (h *HDFSCluster) ValidateCreate() error {
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (h *HDFSCluster) ValidateUpdate(old runtime.Object) error {
 	hdfsclusterlog.Info("validate update", "name", h.Name)
-
+	oldCluster := old.(*HDFSCluster)
+	if validateStorageUpdate(h, oldCluster) == false {
+		return errors.New("spec.node.resources.storage field is immutable")
+	}
 	return validateNode(h)
 }
 
@@ -212,6 +215,24 @@ func validateResources(r *Resources) bool {
 	}
 	if !compile.MatchString(r.Storage) {
 		return false
+	}
+	return true
+}
+
+func validateStorageUpdate(h *HDFSCluster, o *HDFSCluster) bool {
+	if o.Spec.DataNode.Resources.Storage != h.Spec.DataNode.Resources.Storage {
+		return false
+	}
+	if o.Spec.NameNode.Resources.Storage != h.Spec.NameNode.Resources.Storage {
+		return false
+	}
+	if h.Spec.NameNode.Replicas == 2 {
+		if o.Spec.JournalNode.Resources.Storage != h.Spec.JournalNode.Resources.Storage {
+			return false
+		}
+		if o.Spec.Zookeeper.Resources.Storage != h.Spec.Zookeeper.Resources.Storage {
+			return false
+		}
 	}
 	return true
 }

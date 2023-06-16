@@ -111,8 +111,10 @@ hdfs haadmin -getServiceState nn0
 apt update && apt install wget
 wget https://hadoop.s3.ir-thr-at1.arvanstorage.ir/WordCount-1.0-SNAPSHOT.jar
 hadoop fs -mkdir /input
-hadoop fs -put input.txt /input
-hadoop jar WordCount-1.0-SNAPSHOT.jar org.codewitharjun.WC_Runner /input/input.txt /output
+wget https://dumps.wikimedia.org/enwiki/20230301/enwiki-20230301-pages-articles-multistream-index.txt.bz2
+bzip2 -dk enwiki-20230301-pages-articles-multistream-index.txt.bz2
+hadoop fs -put enwiki-20230301-pages-articles-multistream-index.txt /input
+hadoop jar WordCount-1.0-SNAPSHOT.jar org.codewitharjun.WC_Runner /input/enwiki-20230301-pages-articles-multistream-index.txt /output
 hadoop fs -ls /output
 hadoop fs -cat /output/part-00000
 ```
