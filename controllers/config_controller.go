@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,12 +58,12 @@ func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 }
 
 func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
-	zookeeperQuorum := hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
-	if hdfsCluster.Spec.Zookeeper.Replicas == 3 {
-		zookeeperQuorum = hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
-			hdfsCluster.Name + "-zookeeper-1." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
-			hdfsCluster.Name + "-zookeeper-2." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
-	}
+	zookeeperQuorum := hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
+	//if hdfsCluster.Spec.Zookeeper.Replicas == 3 {
+	//	zookeeperQuorum = hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
+	//		hdfsCluster.Name + "-zookeeper-1." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
+	//		hdfsCluster.Name + "-zookeeper-2." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
+	//}
 
 	coreSite := make(map[string]string)
 	coreSite["fs.defaultFS"] = "hdfs://hdfs-k8s"
@@ -129,7 +130,20 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		logger.Error(err, "Error occurred during Get configmap")
 		return err
 	}
-
+	updateJN := false
+	if hdfs.Spec.NameNode.Replicas == 2 {
+		existingJournalNodeStatefulSet := &appsv1.StatefulSet{}
+		err = r.Get(ctx, client.ObjectKey{
+			Namespace: hdfs.Namespace,
+			Name:      hdfs.Name + "-journalnode",
+		}, existingJournalNodeStatefulSet)
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+		if existingJournalNodeStatefulSet.Spec.Replicas != int32Ptr(int32(hdfs.Spec.JournalNode.Replicas)) {
+			updateJN = true
+		}
+	}
 	// Create or update the Service
 	if errors.IsNotFound(err) {
 		if err := r.Create(ctx, desiredConfigMap); err != nil {
@@ -155,7 +169,7 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		//	return errStatus
 		//}
 	} else if !compareXML(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]) ||
-		!compareXML(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) {
+		!compareXML(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) || updateJN {
 		logger.Info("updating configmap")
 		existingConfigMap.Data = desiredConfigMap.Data
 		if err := r.Update(ctx, existingConfigMap); err != nil {
