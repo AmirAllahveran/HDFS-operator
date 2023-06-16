@@ -151,6 +151,7 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 			logger.Info("existingJournalNodeStatefulSet.Spec.Replicas: " + rep1)
 			logger.Info("hdfs.Spec.JournalNode.Replicas: : " + rep2)
 			if existingJournalNodeStatefulSet.Spec.Replicas != int32Ptr(int32(hdfs.Spec.JournalNode.Replicas)) {
+				logger.Info("updating the updateJN")
 				updateJN = true
 			}
 		}
@@ -174,6 +175,7 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 			logger.Info("hdfs.Spec.Zookeeper.Replicas: : " + rep22)
 
 			if existingZookeeperStatefulSet.Spec.Replicas != int32Ptr(int32(hdfs.Spec.Zookeeper.Replicas)) {
+				logger.Info("updating the updateZK")
 				updateZK = true
 			}
 		}
@@ -206,6 +208,8 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 	} else if !compareXML(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]) ||
 		!compareXML(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) || updateJN || updateZK {
 		logger.Info("updating configmap")
+		logger.Info("updateJN : " + strconv.FormatBool(updateJN))
+		logger.Info("updateZK : " + strconv.FormatBool(updateZK))
 		existingConfigMap.Data = desiredConfigMap.Data
 		if err := r.Update(ctx, existingConfigMap); err != nil {
 			return err
