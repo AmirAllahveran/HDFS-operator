@@ -129,6 +129,11 @@ func (r *HDFSClusterReconciler) createOrUpdateJournalNode(ctx context.Context, h
 		if err := r.Create(ctx, desiredJournalNodeService); err != nil {
 			return err
 		}
+	} else if !reflect.DeepEqual(existingService.Spec.Ports, desiredJournalNodeService.Spec.Ports) {
+		existingService.Spec.Ports = desiredJournalNodeService.Spec.Ports
+		if err := r.Update(ctx, existingService); err != nil {
+			return err
+		}
 	}
 
 	// Check if the PodDisruptionBudget already exists

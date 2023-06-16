@@ -144,7 +144,7 @@ func (r *HDFSClusterReconciler) createOrUpdateNameNode(ctx context.Context, hdfs
 	} else if !reflect.DeepEqual(existingService.Spec.Ports, desiredService.Spec.Ports) {
 		existingService.Spec.Ports = desiredService.Spec.Ports
 		if err := r.Update(ctx, existingService); err != nil {
-
+			return err
 		}
 	}
 
