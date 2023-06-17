@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 )
 
@@ -164,9 +165,10 @@ func TestHDFSClusterReconciler_createOrUpdateNameNode(t *testing.T) {
 	}
 
 	ctx := context.Background()
+	logger := log.FromContext(ctx)
 
 	// Test when Service and StatefulSet do not exist
-	err := r.createOrUpdateNameNode(ctx, hdfsCluster)
+	err := r.createOrUpdateNameNode(ctx, hdfsCluster, logger)
 	assert.Nil(t, err)
 
 	// Now the Service and StatefulSet should exist
@@ -185,6 +187,6 @@ func TestHDFSClusterReconciler_createOrUpdateNameNode(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test when Service and StatefulSet already exist
-	err = r.createOrUpdateNameNode(ctx, hdfsCluster)
+	err = r.createOrUpdateNameNode(ctx, hdfsCluster, logger)
 	assert.Nil(t, err)
 }
