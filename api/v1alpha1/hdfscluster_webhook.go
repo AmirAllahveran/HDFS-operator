@@ -50,7 +50,7 @@ func (h *HDFSCluster) Default() {
 	}
 	if h.Spec.NameNode.Replicas == 1 {
 		if _, ok := h.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; !ok {
-			h.Spec.ClusterConfig.CoreSite["fs.defaultFS"] = "hdfs://" + h.Name + "-namenode." +
+			h.Spec.ClusterConfig.CoreSite["fs.defaultFS"] = "hdfs://" + h.Name + "-namenode-0." + h.Name + "-namenode." +
 				h.Namespace + ".svc.cluster.local:8020"
 		}
 		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.replication"]; !ok {

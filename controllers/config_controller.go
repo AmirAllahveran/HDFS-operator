@@ -51,7 +51,7 @@ func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HD
 
 func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 	coreSite := make(map[string]string)
-	coreSite["fs.defaultFS"] = "hdfs://" + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:8020"
+	coreSite["fs.defaultFS"] = "hdfs://" + hdfsCluster.Name + "-namenode-0." + hdfsCluster.Name + "-namenode." + hdfsCluster.Namespace + ".svc.cluster.local:8020"
 	for key, val := range hdfsCluster.Spec.ClusterConfig.CoreSite {
 		coreSite[key] = val
 	}
