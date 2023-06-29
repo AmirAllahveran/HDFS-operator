@@ -1,4 +1,6 @@
 # HDFS operator
+> BSc Thesis Supervisor: [Dr. Mahmoud Momtazpour](https://scholar.google.co.za/citations?user=uwozfWkAAAAJ&hl=en)
+
 The HDFS Operator is used to set up HFDS in high-availability and single mode
 
 ## Description
