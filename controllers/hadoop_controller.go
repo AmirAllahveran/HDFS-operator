@@ -2,14 +2,16 @@ package controllers
 
 import (
 	"context"
+	"time"
+
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"github.com/AmirAllahveran/HDFS-operator/internal/controllerutils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 func (r *HDFSClusterReconciler) desiredHadoopDeployment(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.Deployment, error) {
@@ -34,7 +36,7 @@ func (r *HDFSClusterReconciler) desiredHadoopDeployment(hdfsCluster *v1alpha1.HD
 			Strategy: appsv1.DeploymentStrategy{
 				Type: appsv1.RecreateDeploymentStrategyType,
 			},
-			Replicas: int32Ptr(1),
+			Replicas: controllerutils.Int32Ptr(1),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{

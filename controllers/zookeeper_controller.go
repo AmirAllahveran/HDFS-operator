@@ -2,17 +2,19 @@ package controllers
 
 import (
 	"context"
+	"reflect"
+	"strconv"
+
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"github.com/AmirAllahveran/HDFS-operator/internal/controllerutils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 func (r *HDFSClusterReconciler) desiredZookeeperConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
@@ -110,7 +112,10 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 			hdfsCluster.Name + "-zookeeper-1." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2888:3888::2 " +
 			hdfsCluster.Name + "-zookeeper-2." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2888:3888::3"
 	}
-	compute, _ := resourceRequirements(hdfsCluster.Spec.Zookeeper.Resources)
+	compute, err := controllerutils.ResourceRequirements(hdfsCluster.Spec.Zookeeper.Resources)
+	if err != nil {
+		return nil, err
+	}
 	stsTemplate := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hdfsCluster.Name + "-zookeeper",
@@ -130,7 +135,7 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 				},
 			},
 			ServiceName: hdfsCluster.Name + "-zookeeper",
-			Replicas:    int32Ptr(int32(hdfsCluster.Spec.Zookeeper.Replicas)),
+			Replicas:    controllerutils.Int32Ptr(int32(hdfsCluster.Spec.Zookeeper.Replicas)),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -187,7 +192,7 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 							SecurityContext: &corev1.SecurityContext{
 								AllowPrivilegeEscalation: func() *bool { b := false; return &b }(),
 								RunAsNonRoot:             func() *bool { b := true; return &b }(),
-								RunAsUser:                int64Ptr(int64(1001)),
+								RunAsUser:                controllerutils.Int64Ptr(int64(1001)),
 							},
 							Env: []corev1.EnvVar{
 								{
@@ -324,14 +329,14 @@ func (r *HDFSClusterReconciler) desiredZookeeperStatefulSet(hdfsCluster *v1alpha
 						},
 					},
 					SecurityContext: &corev1.PodSecurityContext{
-						FSGroup: int64Ptr(int64(1001)),
+						FSGroup: controllerutils.Int64Ptr(int64(1001)),
 					},
 					RestartPolicy: corev1.RestartPolicyAlways,
 					Volumes: []corev1.Volume{{
 						Name: "zookeeper-script",
 						VolumeSource: corev1.VolumeSource{
 							ConfigMap: &corev1.ConfigMapVolumeSource{
-								DefaultMode: int32Ptr(493),
+								DefaultMode: controllerutils.Int32Ptr(493),
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: hdfsCluster.Name + "-zookeeper-script",
 								},

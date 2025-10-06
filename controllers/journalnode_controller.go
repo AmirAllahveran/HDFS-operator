@@ -2,7 +2,12 @@ package controllers
 
 import (
 	"context"
+	"net/url"
+	"reflect"
+	"strconv"
+
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"github.com/AmirAllahveran/HDFS-operator/internal/controllerutils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/policy/v1"
@@ -10,11 +15,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"net/url"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 func (r *HDFSClusterReconciler) desiredJournalNodePodDisruptionBudget(hdfs *v1alpha1.HDFSCluster) (*v1.PodDisruptionBudget, error) {
@@ -217,7 +219,10 @@ func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alp
 		journalnodeDataDir = "/data/hadoop/journalnode"
 	}
 
-	compute, _ := resourceRequirements(hdfsCluster.Spec.JournalNode.Resources)
+	compute, err := controllerutils.ResourceRequirements(hdfsCluster.Spec.JournalNode.Resources)
+	if err != nil {
+		return nil, err
+	}
 
 	stsTemplate := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -238,7 +243,7 @@ func (r *HDFSClusterReconciler) desiredJournalNodeStatefulSet(hdfsCluster *v1alp
 				},
 			},
 			ServiceName: hdfsCluster.Name + "-journalnode",
-			Replicas:    int32Ptr(int32(hdfsCluster.Spec.JournalNode.Replicas)),
+			Replicas:    controllerutils.Int32Ptr(int32(hdfsCluster.Spec.JournalNode.Replicas)),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{

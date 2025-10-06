@@ -2,7 +2,10 @@ package controllers
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"github.com/AmirAllahveran/HDFS-operator/internal/controllerutils"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -10,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
@@ -54,7 +56,7 @@ func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 	for key, val := range hdfsCluster.Spec.ClusterConfig.CoreSite {
 		coreSite[key] = val
 	}
-	return mapToXml(coreSite)
+	return controllerutils.MapToXML(coreSite)
 }
 
 func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
@@ -72,7 +74,7 @@ func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	for key, val := range hdfsCluster.Spec.ClusterConfig.CoreSite {
 		coreSite[key] = val
 	}
-	return mapToXml(coreSite)
+	return controllerutils.MapToXML(coreSite)
 }
 
 func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
@@ -85,7 +87,7 @@ func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 	for key, val := range hdfsCluster.Spec.ClusterConfig.HdfsSite {
 		hdfsSite[key] = val
 	}
-	return mapToXml(hdfsSite)
+	return controllerutils.MapToXML(hdfsSite)
 }
 
 func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
@@ -116,7 +118,7 @@ func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	for key, val := range hdfsCluster.Spec.ClusterConfig.HdfsSite {
 		hdfsSite[key] = val
 	}
-	return mapToXml(hdfsSite)
+	return controllerutils.MapToXML(hdfsSite)
 }
 
 func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdfs *v1alpha1.HDFSCluster, logger logr.Logger) error {
@@ -178,8 +180,8 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		//if errStatus != nil {
 		//	return errStatus
 		//}
-	} else if !compareXML(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]) ||
-		!compareXML(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) || updateJN || updateZK {
+	} else if !controllerutils.CompareXML(desiredConfigMap.Data["hdfs-site.xml"], existingConfigMap.Data["hdfs-site.xml"]) ||
+		!controllerutils.CompareXML(desiredConfigMap.Data["core-site.xml"], existingConfigMap.Data["core-site.xml"]) || updateJN || updateZK {
 		logger.Info("updating configmap")
 		logger.Info("updateJN : " + strconv.FormatBool(updateJN))
 		logger.Info("updateZK : " + strconv.FormatBool(updateZK))
@@ -187,20 +189,20 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		if err := r.Update(ctx, existingConfigMap); err != nil {
 			return err
 		}
-		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-datanode", hdfs.Namespace)
+		err = controllerutils.RestartStatefulSet(ctx, r.Client, hdfs.Name+"-datanode", hdfs.Namespace)
 		if err != nil {
 			return err
 		}
-		err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-namenode", hdfs.Namespace)
+		err = controllerutils.RestartStatefulSet(ctx, r.Client, hdfs.Name+"-namenode", hdfs.Namespace)
 		if err != nil {
 			return err
 		}
-		err = r.ScaleDownAndUpDeployment(ctx, hdfs.Name+"-hadoop", hdfs.Namespace)
+		err = controllerutils.RestartDeployment(ctx, r.Client, hdfs.Name+"-hadoop", hdfs.Namespace)
 		if err != nil {
 			return err
 		}
 		if hdfs.Spec.NameNode.Replicas == 2 {
-			err = r.ScaleDownAndUpStatefulSet(ctx, hdfs.Name+"-journalnode", hdfs.Namespace)
+			err = controllerutils.RestartStatefulSet(ctx, r.Client, hdfs.Name+"-journalnode", hdfs.Namespace)
 			if err != nil {
 				return err
 			}

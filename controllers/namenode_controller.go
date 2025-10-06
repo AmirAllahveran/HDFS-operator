@@ -2,7 +2,13 @@ package controllers
 
 import (
 	"context"
+	"net/url"
+	"reflect"
+	"regexp"
+	"strconv"
+
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"github.com/AmirAllahveran/HDFS-operator/internal/controllerutils"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -10,12 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"net/url"
-	"reflect"
-	"regexp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 func (r *HDFSClusterReconciler) desiredHANameNodeConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
@@ -307,7 +309,10 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 		defaultPort = 8020
 	}
 
-	compute, _ := resourceRequirements(hdfsCluster.Spec.NameNode.Resources)
+	compute, err := controllerutils.ResourceRequirements(hdfsCluster.Spec.NameNode.Resources)
+	if err != nil {
+		return nil, err
+	}
 
 	stsTemplate := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -328,7 +333,7 @@ func (r *HDFSClusterReconciler) desiredSingleNameNodeStatefulSet(hdfsCluster *v1
 				},
 			},
 			ServiceName: hdfsCluster.Name + "-namenode",
-			Replicas:    int32Ptr(int32(hdfsCluster.Spec.NameNode.Replicas)),
+			Replicas:    controllerutils.Int32Ptr(int32(hdfsCluster.Spec.NameNode.Replicas)),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -523,7 +528,10 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 		defaultPort = 8020
 	}
 
-	compute, _ := resourceRequirements(hdfsCluster.Spec.NameNode.Resources)
+	compute, err := controllerutils.ResourceRequirements(hdfsCluster.Spec.NameNode.Resources)
+	if err != nil {
+		return nil, err
+	}
 
 	stsTempalte := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -544,7 +552,7 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 				},
 			},
 			ServiceName: hdfsCluster.Name + "-namenode",
-			Replicas:    int32Ptr(int32(hdfsCluster.Spec.NameNode.Replicas)),
+			Replicas:    controllerutils.Int32Ptr(int32(hdfsCluster.Spec.NameNode.Replicas)),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -708,7 +716,7 @@ func (r *HDFSClusterReconciler) desiredHANameNodeStatefulSet(hdfsCluster *v1alph
 							Name: "ha-namenode-script",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									DefaultMode: int32Ptr(0755),
+									DefaultMode: controllerutils.Int32Ptr(0755),
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: hdfsCluster.Name + "-ha-namenode-script",
 									},

@@ -2,17 +2,19 @@ package controllers
 
 import (
 	"context"
+	"net/url"
+	"reflect"
+	"strconv"
+
 	"github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
+	"github.com/AmirAllahveran/HDFS-operator/internal/controllerutils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/url"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 // DesiredDataNodeConfigMap
@@ -65,7 +67,10 @@ echo $_CLUSTER_ID | grep -q -v null`,
 }
 
 func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1.HDFSCluster) (*appsv1.StatefulSet, error) {
-	compute, _ := resourceRequirements(hdfsCluster.Spec.DataNode.Resources)
+	compute, err := controllerutils.ResourceRequirements(hdfsCluster.Spec.DataNode.Resources)
+	if err != nil {
+		return nil, err
+	}
 
 	var webPort int
 	if val, ok := hdfsCluster.Spec.ClusterConfig.HdfsSite["dfs.namenode.http-address"]; ok {
@@ -106,7 +111,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 				},
 			},
 			ServiceName: hdfsCluster.Name + "-datanode",
-			Replicas:    int32Ptr(int32(hdfsCluster.Spec.DataNode.Replicas)),
+			Replicas:    controllerutils.Int32Ptr(int32(hdfsCluster.Spec.DataNode.Replicas)),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -271,7 +276,7 @@ func (r *HDFSClusterReconciler) desiredDataNodeStatefulSet(hdfsCluster *v1alpha1
 							Name: "datanode-script",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									DefaultMode: int32Ptr(0755),
+									DefaultMode: controllerutils.Int32Ptr(0755),
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: hdfsCluster.Name + "-datanode-script",
 									},
