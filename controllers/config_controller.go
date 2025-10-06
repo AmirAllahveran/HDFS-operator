@@ -11,7 +11,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
-	"time"
 )
 
 func (r *HDFSClusterReconciler) desiredClusterConfigMap(hdfsCluster *v1alpha1.HDFSCluster) (*corev1.ConfigMap, error) {
@@ -60,7 +59,7 @@ func configCoreSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 
 func configCoreSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	zookeeperQuorum := hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
-	if hdfsCluster.Spec.Zookeeper.Replicas == 3 {
+	if hdfsCluster.Spec.Zookeeper != nil && hdfsCluster.Spec.Zookeeper.Replicas == 3 {
 		zookeeperQuorum = hdfsCluster.Name + "-zookeeper-0." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
 			hdfsCluster.Name + "-zookeeper-1." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181," +
 			hdfsCluster.Name + "-zookeeper-2." + hdfsCluster.Name + "-zookeeper." + hdfsCluster.Namespace + ".svc.cluster.local:2181"
@@ -91,7 +90,7 @@ func configHdfsSiteSingle(hdfsCluster *v1alpha1.HDFSCluster) string {
 
 func configHdfsSiteHA(hdfsCluster *v1alpha1.HDFSCluster) string {
 	qjournal := hdfsCluster.Name + "-journalnode-0." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485"
-	if hdfsCluster.Spec.JournalNode.Replicas == 3 {
+	if hdfsCluster.Spec.JournalNode != nil && hdfsCluster.Spec.JournalNode.Replicas == 3 {
 		qjournal = hdfsCluster.Name + "-journalnode-0." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485;" +
 			hdfsCluster.Name + "-journalnode-1." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485;" +
 			hdfsCluster.Name + "-journalnode-2." + hdfsCluster.Name + "-journalnode." + hdfsCluster.Namespace + ".svc.cluster.local:8485"
@@ -134,32 +133,36 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 	updateJN := false
 	updateZK := false
 	if hdfs.Spec.NameNode.Replicas == 2 {
+		journalReplicas := int32(0)
+		if hdfs.Spec.JournalNode != nil {
+			journalReplicas = int32(hdfs.Spec.JournalNode.Replicas)
+		}
 		existingJournalNodeStatefulSet := &appsv1.StatefulSet{}
 		errJN := r.Get(ctx, client.ObjectKey{
 			Namespace: hdfs.Namespace,
 			Name:      hdfs.Name + "-journalnode",
 		}, existingJournalNodeStatefulSet)
 		if errJN != nil && !errors.IsNotFound(errJN) {
-			return err
+			return errJN
 		}
-		if errors.IsNotFound(errJN) {
-			updateJN = false
-		} else if strconv.Itoa(int(*existingJournalNodeStatefulSet.Spec.Replicas)) != strconv.Itoa(hdfs.Spec.JournalNode.Replicas) {
+		if !errors.IsNotFound(errJN) && existingJournalNodeStatefulSet.Spec.Replicas != nil && *existingJournalNodeStatefulSet.Spec.Replicas != journalReplicas {
 			updateJN = true
 		}
 
+		zookeeperReplicas := int32(0)
+		if hdfs.Spec.Zookeeper != nil {
+			zookeeperReplicas = int32(hdfs.Spec.Zookeeper.Replicas)
+		}
 		existingZookeeperStatefulSet := &appsv1.StatefulSet{}
 		errZK := r.Get(ctx, client.ObjectKey{
 			Namespace: hdfs.Namespace,
 			Name:      hdfs.Name + "-zookeeper",
 		}, existingZookeeperStatefulSet)
 		if errZK != nil && !errors.IsNotFound(errZK) {
-			return err
+			return errZK
 		}
 
-		if errors.IsNotFound(errZK) {
-			updateZK = false
-		} else if strconv.Itoa(int(*existingZookeeperStatefulSet.Spec.Replicas)) != strconv.Itoa(hdfs.Spec.Zookeeper.Replicas) {
+		if !errors.IsNotFound(errZK) && existingZookeeperStatefulSet.Spec.Replicas != nil && *existingZookeeperStatefulSet.Spec.Replicas != zookeeperReplicas {
 			updateZK = true
 		}
 	}
@@ -169,19 +172,6 @@ func (r *HDFSClusterReconciler) createOrUpdateConfigmap(ctx context.Context, hdf
 		if err := r.Create(ctx, desiredConfigMap); err != nil {
 			logger.Error(err, "Error occurred during Create configmap")
 			return err
-		}
-		for {
-			existingConfigMap := &corev1.ConfigMap{}
-			err := r.Get(ctx, client.ObjectKeyFromObject(desiredConfigMap), existingConfigMap)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			if errors.IsNotFound(err) {
-				logger.Info("waiting to create cluster config ...")
-				time.Sleep(100 * time.Millisecond)
-			} else {
-				break
-			}
 		}
 		//hdfs.Status.CreationTime = time.Now().String()
 		//errStatus := r.Status().Update(ctx, hdfs)

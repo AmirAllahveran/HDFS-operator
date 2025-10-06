@@ -48,6 +48,14 @@ func (h *HDFSCluster) Default() {
 	if h.Spec.ClusterConfig.HdfsSite == nil {
 		h.Spec.ClusterConfig.HdfsSite = make(map[string]string)
 	}
+	if h.Spec.NameNode.Replicas == 2 {
+		if h.Spec.Zookeeper == nil {
+			h.Spec.Zookeeper = &Node{}
+		}
+		if h.Spec.JournalNode == nil {
+			h.Spec.JournalNode = &Node{}
+		}
+	}
 	if h.Spec.NameNode.Replicas == 1 {
 		if _, ok := h.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; !ok {
 			h.Spec.ClusterConfig.CoreSite["fs.defaultFS"] = "hdfs://" + h.Name + "-namenode-0." + h.Name + "-namenode." +
@@ -69,12 +77,16 @@ func (h *HDFSCluster) Default() {
 			h.Spec.ClusterConfig.HdfsSite["dfs.permissions.enabled"] = "true"
 		}
 	} else {
+		zkReplicas := 0
+		if h.Spec.Zookeeper != nil {
+			zkReplicas = h.Spec.Zookeeper.Replicas
+		}
 		if _, ok := h.Spec.ClusterConfig.CoreSite["fs.defaultFS"]; !ok {
 			h.Spec.ClusterConfig.CoreSite["fs.defaultFS"] = "hdfs://hdfs-k8s"
 		}
 		if _, ok := h.Spec.ClusterConfig.CoreSite["ha.zookeeper.quorum"]; !ok {
 			zookeeperQuorum := h.Name + "-zookeeper-0." + h.Name + "-zookeeper." + h.Namespace + ".svc.cluster.local:2181"
-			if h.Spec.Zookeeper.Replicas == 3 {
+			if zkReplicas == 3 {
 				zookeeperQuorum = h.Name + "-zookeeper-0." + h.Name + "-zookeeper." + h.Namespace + ".svc.cluster.local:2181," +
 					h.Name + "-zookeeper-1." + h.Name + "-zookeeper." + h.Namespace + ".svc.cluster.local:2181," +
 					h.Name + "-zookeeper-2." + h.Name + "-zookeeper." + h.Namespace + ".svc.cluster.local:2181"
@@ -97,7 +109,11 @@ func (h *HDFSCluster) Default() {
 		}
 		if _, ok := h.Spec.ClusterConfig.HdfsSite["dfs.namenode.shared.edits.dir"]; !ok {
 			qjournal := h.Name + "-journalnode-0." + h.Name + "-journalnode." + h.Namespace + ".svc.cluster.local:8485"
-			if h.Spec.JournalNode.Replicas == 3 {
+			jnReplicas := 0
+			if h.Spec.JournalNode != nil {
+				jnReplicas = h.Spec.JournalNode.Replicas
+			}
+			if jnReplicas == 3 {
 				qjournal = h.Name + "-journalnode-0." + h.Name + "-journalnode." + h.Namespace + ".svc.cluster.local:8485;" +
 					h.Name + "-journalnode-1." + h.Name + "-journalnode." + h.Namespace + ".svc.cluster.local:8485;" +
 					h.Name + "-journalnode-2." + h.Name + "-journalnode." + h.Namespace + ".svc.cluster.local:8485"
@@ -175,6 +191,9 @@ func validateNode(h *HDFSCluster) error {
 	}
 
 	if h.Spec.NameNode.Replicas == 2 {
+		if h.Spec.Zookeeper == nil || h.Spec.JournalNode == nil {
+			return errors.New("zookeeper and journalNode must be provided when NameNode replicas is set to 2")
+		}
 		match := isValid(*h.Spec.Zookeeper, "^[13]$")
 		if !match {
 			return errors.New("invalid Zookeeper")

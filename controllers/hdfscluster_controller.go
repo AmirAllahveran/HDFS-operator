@@ -19,21 +19,33 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	hdfsv1alpha1 "github.com/AmirAllahveran/HDFS-operator/api/v1alpha1"
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"strings"
 )
 
 // HDFSClusterReconciler reconciles a HDFSCluster object
 type HDFSClusterReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
+
+const (
+	hdfsClusterFinalizer = "hdfs.aut.tech/finalizer"
+)
 
 //+kubebuilder:rbac:groups=hdfs.aut.tech,resources=hdfsclusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=hdfs.aut.tech,resources=hdfsclusters/status,verbs=get;update;patch
@@ -50,99 +62,142 @@ type HDFSClusterReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
-func (r *HDFSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
 
-	//var kubeConfig *string
-	//config, err := rest.InClusterConfig()
-	//if err != nil {
-	//	kubeHome := filepath.Join(homedir.HomeDir(), ".kube", "config")
-	//	kubeConfig = &kubeHome
-	//	config, err = clientcmd.BuildConfigFromFlags("", *kubeConfig)
-	//	if err != nil {
-	//		return ctrl.Result{}, err
-	//	}
-	//}
-	//
-	//clientSet, err := kubernetes.NewForConfig(config)
-	//if err != nil {
-	//	logger.Error(err, "")
-	//}
+func (r *HDFSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx).WithValues("hdfscluster", req.NamespacedName)
 
 	// Fetch the HDFS custom resource
 	var hdfs hdfsv1alpha1.HDFSCluster
 	err := r.Get(ctx, req.NamespacedName, &hdfs)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			logger.Info("Object not found, it could have been deleted")
+			logger.Info("resource deleted before reconciliation")
 			return ctrl.Result{}, nil
 		}
-		logger.Info("Error occurred during fetching the object")
+		logger.Error(err, "failed to fetch HDFSCluster")
 		return ctrl.Result{}, err
 	}
 
-	requestArray := strings.Split(fmt.Sprint(req), "/")
-	requestName := requestArray[1]
-
-	if requestName == hdfs.Name {
-		//logger.Info("create Or Update Components")
-		err = r.createOrUpdateComponents(ctx, &hdfs, logger)
-		if err != nil {
-			logger.Info("Error occurred during create Or Update Components")
-			return ctrl.Result{}, err
+	if hdfs.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !controllerutil.ContainsFinalizer(&hdfs, hdfsClusterFinalizer) {
+			controllerutil.AddFinalizer(&hdfs, hdfsClusterFinalizer)
+			if err := r.Update(ctx, &hdfs); err != nil {
+				logger.Error(err, "failed to add finalizer")
+				return ctrl.Result{}, err
+			}
+			logger.Info("finalizer registered")
 		}
+	} else {
+		if controllerutil.ContainsFinalizer(&hdfs, hdfsClusterFinalizer) {
+			if err := r.cleanupCluster(ctx, &hdfs, logger); err != nil {
+				logger.Error(err, "cleanup failed")
+				return ctrl.Result{}, err
+			}
+			controllerutil.RemoveFinalizer(&hdfs, hdfsClusterFinalizer)
+			if err := r.Update(ctx, &hdfs); err != nil {
+				logger.Error(err, "failed to remove finalizer")
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	if err := r.createOrUpdateComponents(ctx, &hdfs, logger); err != nil {
+		logger.Error(err, "failed to reconcile dependent resources")
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
+func (r *HDFSClusterReconciler) cleanupCluster(ctx context.Context, hdfs *hdfsv1alpha1.HDFSCluster, logger logr.Logger) error {
+	cleanupObjects := []client.Object{
+		&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-cluster-config", Namespace: hdfs.Namespace}},
+		&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-datanode-script", Namespace: hdfs.Namespace}},
+		&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-zookeeper-script", Namespace: hdfs.Namespace}},
+		&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-ha-namenode-script", Namespace: hdfs.Namespace}},
+		&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-namenode", Namespace: hdfs.Namespace}},
+		&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-datanode", Namespace: hdfs.Namespace}},
+		&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-journalnode", Namespace: hdfs.Namespace}},
+		&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-zookeeper", Namespace: hdfs.Namespace}},
+		&appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-hadoop", Namespace: hdfs.Namespace}},
+		&corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-namenode", Namespace: hdfs.Namespace}},
+		&corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-datanode", Namespace: hdfs.Namespace}},
+		&corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-journalnode", Namespace: hdfs.Namespace}},
+		&corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-zookeeper", Namespace: hdfs.Namespace}},
+		&policyv1.PodDisruptionBudget{ObjectMeta: metav1.ObjectMeta{Name: hdfs.Name + "-journalnode", Namespace: hdfs.Namespace}},
+	}
+
+	var errs []error
+	for _, obj := range cleanupObjects {
+		if err := r.Delete(ctx, obj); client.IgnoreNotFound(err) != nil {
+			logger.Error(err, "failed to cleanup dependent resource", "name", obj.GetName())
+			errs = append(errs, err)
+		}
+	}
+
+	aggregated := utilerrors.NewAggregate(errs)
+	if aggregated != nil {
+		r.recordWarning(hdfs, "CleanupFailed", aggregated.Error())
+	}
+
+	return aggregated
+}
+
 func (r *HDFSClusterReconciler) createOrUpdateComponents(ctx context.Context, hdfs *hdfsv1alpha1.HDFSCluster, logger logr.Logger) error {
 
-	//logger.Info("createOrUpdateConfigmap", "name", hdfs.Name)
-	err := r.createOrUpdateConfigmap(ctx, hdfs, logger)
-	if err != nil {
-		logger.Info("Error occurred during createOrUpdateConfigmap")
+	if hdfs.Spec.NameNode.Replicas == 2 {
+		if hdfs.Spec.JournalNode == nil || hdfs.Spec.Zookeeper == nil {
+			err := fmt.Errorf("journalNode and zookeeper specs are required when running NameNode in HA mode")
+			r.recordWarning(hdfs, "MissingHAMembers", err.Error())
+			return err
+		}
+	}
+
+	if err := r.createOrUpdateConfigmap(ctx, hdfs, logger); err != nil {
+		logger.Error(err, "reconcile configmap failed")
 		return err
 	}
 	if hdfs.Spec.NameNode.Replicas == 2 {
-		//logger.Info("createOrUpdateJournalNode", "name", hdfs.Name)
-		err := r.createOrUpdateJournalNode(ctx, hdfs)
-		if err != nil {
-			logger.Info("Error occurred during createOrUpdateJournalNode")
+		if err := r.createOrUpdateJournalNode(ctx, hdfs); err != nil {
+			logger.Error(err, "reconcile journalnode failed")
 			return err
 		}
-		//logger.Info("createOrUpdateZookeeper", "name", hdfs.Name)
-		err = r.createOrUpdateZookeeper(ctx, hdfs)
-		if err != nil {
-			logger.Info("Error occurred during createOrUpdateZookeeper")
+		if err := r.createOrUpdateZookeeper(ctx, hdfs); err != nil {
+			logger.Error(err, "reconcile zookeeper failed")
 			return err
 		}
 	}
-	//logger.Info("createOrUpdateNameNode", "name", hdfs.Name)
-	err = r.createOrUpdateNameNode(ctx, hdfs, logger)
-	if err != nil {
-		logger.Info("Error occurred during createOrUpdateNameNode")
+	if err := r.createOrUpdateNameNode(ctx, hdfs, logger); err != nil {
+		logger.Error(err, "reconcile namenode failed")
 		return err
 	}
-	//logger.Info("createOrUpdateDataNode", "name", hdfs.Name)
-	err = r.createOrUpdateDataNode(ctx, hdfs)
-	if err != nil {
-		logger.Info("Error occurred during createOrUpdateDataNode")
+	if err := r.createOrUpdateDataNode(ctx, hdfs); err != nil {
+		logger.Error(err, "reconcile datanode failed")
 		return err
 	}
-	//logger.Info("createHadoop", "name", hdfs.Name)
-	err = r.createHadoop(ctx, hdfs)
-	if err != nil {
-		logger.Info("Error occurred during createHadoop")
+	if err := r.createHadoop(ctx, hdfs); err != nil {
+		logger.Error(err, "reconcile hadoop client failed")
 		return err
 	}
 
 	return nil
 }
 
+func (r *HDFSClusterReconciler) recordWarning(hdfs *hdfsv1alpha1.HDFSCluster, reason, message string) {
+	if r.Recorder != nil {
+		r.Recorder.Eventf(hdfs, corev1.EventTypeWarning, reason, message)
+	}
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *HDFSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&hdfsv1alpha1.HDFSCluster{}).
+		Owns(&appsv1.StatefulSet{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.ConfigMap{}).
+		Owns(&corev1.Service{}).
+		Owns(&policyv1.PodDisruptionBudget{}).
 		Complete(r)
 }
